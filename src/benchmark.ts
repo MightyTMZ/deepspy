@@ -30,8 +30,16 @@ export async function fetchBenchmark(params: {
   const defaultFetch = async (
     url: string,
   ): Promise<{ text: string; timestamp: string }> => {
-    const resp = await fetch(url);
-    return { text: await resp.text(), timestamp: new Date().toISOString() };
+    try {
+      const resp = await fetch(url);
+      return { text: await resp.text(), timestamp: new Date().toISOString() };
+    } catch (e) {
+      // This machine may not resolve the host (tunnels, split DNS). A hosted reader fetch is still a plain fetch:
+      // it returns the served page, none of the click-revealed content. Segment C, Sept 13.
+      const reader = await fetch(`https://r.jina.ai/${url}`, { headers: { accept: "text/plain" } });
+      if (!reader.ok) throw e;
+      return { text: await reader.text(), timestamp: new Date().toISOString() };
+    }
   };
 
   const fetchFn = params.fetchFn ?? defaultFetch;

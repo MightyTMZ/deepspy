@@ -26,6 +26,10 @@ const DOM_RULES: Array<{ wall: WallKind; test: (t: string, html: string) => bool
 export async function classifyFromDom(page: Page): Promise<WallVerdict> {
   const text = await page.locator("body").innerText().catch(() => "");
   const html = await page.content().catch(() => "");
+  // A sign-in form with a password field is a login wall even when it embeds a CAPTCHA widget (ALTCHA, Turnstile):
+  // the human types the password and clears the widget in one go, and Steel's solver is not waited for first.
+  const login = DOM_RULES.find((r) => r.wall === "login");
+  if (login && login.test(text, html)) return { wall: "login", confidence: 0.85, evidence: "dom:login" };
   for (const rule of DOM_RULES) {
     if (rule.test(text, html)) return { wall: rule.wall, confidence: 0.8, evidence: `dom:${rule.wall}` };
   }

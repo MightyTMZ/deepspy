@@ -118,7 +118,7 @@ async function capture(ctx: Ctx, strategy: string, revealedBy: Observation["reve
 /** Click with the URL guard. Returns false if the click navigated (recorded as a link and restored). */
 async function guardedClick(ctx: Ctx, target: Locator, label: string): Promise<boolean> {
   if (ctx.actions >= ctx.max * 12) return false;
-  if (ctx.blocked.test(label)) return false;
+  if (ctx.blocked.test(label) || /dev ?tools|next\.js/i.test(label)) return false; // never the framework's dev overlay
   const page = ctx.cfg.page;
   const before = page.url();
   try {
