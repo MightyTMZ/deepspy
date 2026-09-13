@@ -49,7 +49,7 @@ describe("handoff controller", () => {
   it("C15: after a login wall, resume verifies the signed-in indicator", async () => {
     await page.goto(fixtureUrl("login-wall.html"));
     const { d } = driver(); const sink = new MemorySink();
-    const hc = new HandoffController(d, sink, { signedInIndicator: async () => "Workspace settings" });
+    const hc = new HandoffController(d, sink, { signedInIndicator: async (_h) => "Workspace settings" });
     const evt = (await hc.onWall(wall("login"), fakeHandle(page))) as HandoffEvent;
     expect((await hc.resume("job1", evt.generation)).ok).toBe(false); // still on the login page
     await page.goto(fixtureUrl("settings-page.html"));               // human logged in
