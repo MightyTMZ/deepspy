@@ -36,6 +36,11 @@ export function startResumeServer(opts: ResumeServerOptions): { close(): void; p
     send(404, { ok: false, reason: "not found" });
   });
   const port = opts.port ?? Number(process.env.PERISCOPE_RESUME_PORT ?? 4747);
+  // A second run on the same machine must not die because the first one holds the port: warn and run without the endpoint.
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") console.warn(`[resume] port ${port} is in use (another run?); resume endpoint disabled for this run, set PERISCOPE_RESUME_PORT to change it`);
+    else console.warn(`[resume] endpoint error: ${err.message}`);
+  });
   server.listen(port);
   return {
     port,
