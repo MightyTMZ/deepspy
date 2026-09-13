@@ -9,9 +9,16 @@
 import { readFileSync } from "node:fs";
 import type { Page, Locator } from "playwright-core";
 import type { Observation, SessionHandle, EventSink } from "@periscope/contracts";
-import { extractVisibleText } from "./perception.js";
 import { createObservation, markMissedByFetch } from "./utils/observation-factory.js";
-import { diffText, normalizeText, splitBlocks } from "./utils/text.js";
+import { normalizeText, splitBlocks } from "./utils/text.js";
+
+/** Visible text as normalized lines. innerText preserves the line structure the diff needs. */
+async function visibleLines(page: Page): Promise<string[]> {
+  const raw = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
+  return raw.split(/\r?\n/).map(normalizeText).filter((l) => l.length >= 3);
+}
+
+const CODE_LIKE = /\bvar\s|\bfunction\s*\(|=>|;\s*$|^\/\/|\{\s*$|\}\s*$|window\.|document\./;
 
 export interface DeterministicRevealConfig {
   runId: string;
@@ -61,11 +68,16 @@ async function emit(ctx: Ctx, obs: Observation): Promise<void> {
 }
 
 async function capture(ctx: Ctx, strategy: string, revealedBy: Observation["revealedBy"]): Promise<number> {
-  const text = await extractVisibleText(ctx.cfg.page).catch(() => "");
-  const blocks = diffText(ctx.baseline, text, ctx.seen);
+  const lines = await visibleLines(ctx.cfg.page);
+  const blocks: string[] = [];
+  for (const line of lines) {
+    if (ctx.seen.has(line)) continue;
+    ctx.seen.add(line);
+    blocks.push(line);
+  }
   let n = 0;
   for (const block of blocks) {
-    if (block.length < 3) continue;
+    if (block.length < 3 || CODE_LIKE.test(block)) continue;
     let obs = createObservation({
       runId: ctx.cfg.runId, jobId: ctx.cfg.jobId, competitor: ctx.cfg.competitor, url: ctx.cfg.url,
       layer: "hidden", source: "browser", kind: "text", text: block, revealedBy,
@@ -76,6 +88,7 @@ async function capture(ctx: Ctx, strategy: string, revealedBy: Observation["reve
     n++;
   }
   ctx.strategies[strategy] = (ctx.strategies[strategy] ?? 0) + n;
+  await documents(ctx, revealedBy?.label);
   return n;
 }
 
@@ -264,7 +277,7 @@ async function iframes(ctx: Ctx): Promise<void> {
     if (text && normalizeText(text).length > 20) {
       const blocks = splitBlocks(text);
       for (const block of blocks) {
-        if (ctx.seen.has(block) || block.length < 3) continue;
+        if (ctx.seen.has(block) || block.length < 3 || CODE_LIKE.test(block)) continue;
         ctx.seen.add(block);
         let obs = createObservation({
           runId: ctx.cfg.runId, jobId: ctx.cfg.jobId, competitor: ctx.cfg.competitor, url: ctx.cfg.url,
@@ -285,7 +298,7 @@ async function iframes(ctx: Ctx): Promise<void> {
   }
 }
 
-async function documents(ctx: Ctx): Promise<void> {
+async function documents(ctx: Ctx, viaLabel?: string): Promise<void> {
   const page = ctx.cfg.page;
   const hrefs = await page.evaluate(() => Array.from(document.querySelectorAll("a[href]")).map((a) => (a as HTMLAnchorElement).href)).catch(() => [] as string[]);
   const docs = [...new Set(hrefs.filter((h) => /\.(pdf|docx?|xlsx?|pptx?|csv)(\?|#|$)/i.test(h)))];
@@ -294,7 +307,7 @@ async function documents(ctx: Ctx): Promise<void> {
     ctx.seen.add(href);
     let obs = createObservation({
       runId: ctx.cfg.runId, jobId: ctx.cfg.jobId, competitor: ctx.cfg.competitor, url: ctx.cfg.url,
-      layer: "hidden", source: "browser", kind: "document", text: href, revealedBy: { action: "none", label: "document link" },
+      layer: "hidden", source: "browser", kind: "document", text: href, revealedBy: viaLabel ? { action: "click", label: viaLabel } : { action: "none", label: "document link" },
       vantage: ctx.cfg.handle.vantage, perception: "dom", steelSessionId: ctx.cfg.handle.sessionId,
     });
     obs = markMissedByFetch(obs, ctx.cfg.surfaceBaseline);
@@ -330,16 +343,17 @@ export async function revealDeterministic(cfg: DeterministicRevealConfig): Promi
   if (page.url() !== cfg.url) await page.goto(cfg.url, { waitUntil: "load", timeout: 60_000 });
   await page.waitForTimeout(1200);
 
-  const baseline = await extractVisibleText(page);
+  const baselineLines = await visibleLines(page);
+  const baseline = baselineLines.join("\n");
   const ctx: Ctx = {
-    cfg, baseline, seen: new Set(splitBlocks(baseline)), observations: [], actions: 0,
+    cfg, baseline, seen: new Set(baselineLines), observations: [], actions: 0,
     max: cfg.maxActionsPerStrategy ?? 12, blocked: loadBlocklist(cfg.blocklistPath ?? "fixtures/blocklist.json"),
     strategies: {}, apiUrls,
   };
 
   const strategies: Array<[string, (c: Ctx) => Promise<void>]> = [
     ["consent", consentWalls], ["tabs", tabsAndAccordions], ["selects", selects], ["toggles", toggles],
-    ["showMore", showMore], ["hover", hover], ["modals", modals], ["iframes", iframes], ["documents", documents], ["hiddenApi", hiddenApi],
+    ["showMore", showMore], ["hover", hover], ["modals", modals], ["iframes", iframes], ["documents", (c) => documents(c)], ["hiddenApi", hiddenApi],
   ];
   for (const [name, fn] of strategies) {
     try { await fn(ctx); } catch (err) { console.error(`deterministic reveal ${name} failed:`, (err as Error).message.slice(0, 120)); }
