@@ -25,6 +25,14 @@ describe("bordersGrid", () => {
     const ca = g.vantages.find((v) => v.key === "CA/desktop")!;
     expect(ca.unique).toEqual(expect.arrayContaining(["CA$11.99 / month", "Available only in Canada"]));
     expect(ca.prices).toEqual(["CA$11.99 / month"]);
+    expect(g.countries.find((c) => c.country === "CA")?.uniqueToCountry).toContain("Available only in Canada");
+  });
+
+  it("recognises European price formats", () => {
+    const rows = [obs("DE", "desktop", "10,99 € / Monat"), obs("DE", "desktop", "5,99 EUR pro Monat"), obs("US", "desktop", "$10.99 / month")];
+    const g = bordersGrid("https://x.test/pricing", rows);
+    expect(g.countries.find((c) => c.country === "DE")?.prices).toHaveLength(2);
+    expect(g.differsByCountry).toBe(true);
   });
 
   it("flags device differences when mobile shows a price desktop does not", () => {

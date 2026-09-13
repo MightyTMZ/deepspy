@@ -136,7 +136,7 @@ async function labelOf(l: Locator): Promise<string> {
 
 async function consentWalls(ctx: Ctx): Promise<void> {
   const page = ctx.cfg.page;
-  const decline = page.locator("button, a, [role=button]").filter({ hasText: /reject|decline|necessary only|essential only|only necessary|deny/i }).first();
+  const decline = page.locator("button, a, [role=button]").filter({ hasText: /reject|decline|necessary only|essential only|only necessary|deny|ablehnen|nur notwendige|nur erforderliche|refuser|rechazar|rifiuta|weigeren/i }).first();
   if (await decline.count()) {
     const label = await labelOf(decline);
     await guardedClick(ctx, decline, label);
@@ -306,7 +306,7 @@ async function iframes(ctx: Ctx): Promise<void> {
         ctx.seen.add(block);
         let obs = createObservation({
           runId: ctx.cfg.runId, jobId: ctx.cfg.jobId, competitor: ctx.cfg.competitor, url: ctx.cfg.url,
-          layer: "hidden", source: "browser", kind: "text", text: block, revealedBy: { action: "none", label: `iframe ${new URL(src).hostname}` },
+          layer: "hidden", source: "browser", kind: "text", text: block, revealedBy: { action: "none", label: `iframe ${new URL(src).hostname || new URL(src).pathname.split("/").pop() || src}` },
           vantage: ctx.cfg.handle.vantage, perception: "dom", steelSessionId: ctx.cfg.handle.sessionId,
         });
         obs = markMissedByFetch(obs, ctx.cfg.surfaceBaseline);

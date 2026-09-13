@@ -11,15 +11,22 @@ export interface VantageCell {
   prices: string[];            // price-like lines seen from this vantage
 }
 
+export interface CountryCell {
+  country: string;
+  uniqueToCountry: string[];   // lines seen from this country (any device) and from no other country
+  prices: string[];
+}
+
 export interface BordersGrid {
   url: string;
   vantages: VantageCell[];
+  countries: CountryCell[];
   shared: number;              // lines every vantage saw
   differsByCountry: boolean;
   differsByDevice: boolean;
 }
 
-const PRICE = /(\$|€|£|CA\$|US\$|C\$|A\$|¥|₹|kr|CHF|zł)\s?\d|\d+(\.\d+)?\s*(\/|per)\s*(mo|month|yr|year|user|seat)/i;
+export const PRICE = /(\$|€|£|CA\$|US\$|C\$|A\$|¥|₹|kr|CHF|zł)\s?\d|\d+([.,]\d+)?\s?(€|EUR|USD|CAD|GBP|CHF|kr|zł)\b|\d+([.,]\d+)?\s*(\/|per|pro)\s*(mo|month|monat|mois|yr|year|jahr|user|seat)/i;
 
 export function vantageKey(o: Observation): string {
   return `${o.vantage.country ?? "-"}/${o.vantage.device}`;
@@ -47,6 +54,18 @@ export function bordersGrid(url: string, observations: Observation[]): BordersGr
   })).sort((a, b) => a.key.localeCompare(b.key));
 
   const countries = new Set(vantages.map((v) => v.country ?? "-"));
+  const linesByCountry = new Map<string, Set<string>>();
+  for (const [, c] of cells) {
+    const k = c.country ?? "-";
+    const set = linesByCountry.get(k) ?? new Set<string>();
+    for (const l of c.lines) set.add(l);
+    linesByCountry.set(k, set);
+  }
+  const countryCells: CountryCell[] = [...linesByCountry.entries()].map(([country, lines]) => ({
+    country,
+    uniqueToCountry: [...lines].filter((l) => [...linesByCountry.entries()].every(([k2, s2]) => k2 === country || !s2.has(l))),
+    prices: [...lines].filter((l) => PRICE.test(l)),
+  })).sort((a, b) => a.country.localeCompare(b.country));
   const devices = new Set(vantages.map((v) => v.device));
   const differs = (group: (v: VantageCell) => string, groups: Set<string>) => {
     if (groups.size < 2) return false;
@@ -62,7 +81,7 @@ export function bordersGrid(url: string, observations: Observation[]): BordersGr
   };
   const byCountry = (v: VantageCell) => v.country ?? "-";
   const byDevice = (v: VantageCell) => v.device;
-  return { url, vantages, shared: everyone.size, differsByCountry: differs(byCountry, countries), differsByDevice: differs(byDevice, devices) };
+  return { url, vantages, countries: countryCells, shared: everyone.size, differsByCountry: differs(byCountry, countries), differsByDevice: differs(byDevice, devices) };
 }
 
 /** Compact text rendering for the CLI and the report. */
@@ -70,8 +89,11 @@ export function renderGrid(g: BordersGrid, maxLines = 8): string {
   const out = [`borders grid for ${g.url}`, `shared by every vantage: ${g.shared} lines | differs by country: ${g.differsByCountry} | differs by device: ${g.differsByDevice}`];
   for (const v of g.vantages) {
     out.push(`  ${v.key.padEnd(12)} total ${String(v.total).padStart(4)} | unique ${String(v.unique.length).padStart(3)} | prices ${v.prices.length}`);
-    for (const line of v.prices.slice(0, maxLines)) out.push(`      $ ${line.slice(0, 110)}`);
-    for (const line of v.unique.filter((l) => !PRICE.test(l)).slice(0, maxLines)) out.push(`      + ${line.slice(0, 110)}`);
+  }
+  for (const c of g.countries) {
+    out.push(`  country ${c.country}: ${c.prices.length} price lines, ${c.uniqueToCountry.length} lines no other country saw`);
+    for (const line of c.prices.slice(0, maxLines)) out.push(`      $ ${line.slice(0, 110)}`);
+    for (const line of c.uniqueToCountry.filter((l) => !PRICE.test(l)).slice(0, maxLines)) out.push(`      + ${line.slice(0, 110)}`);
   }
   return out.join("\n");
 }
