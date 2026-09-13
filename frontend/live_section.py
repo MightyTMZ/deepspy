@@ -241,6 +241,8 @@ def _story_card(rid: str, stats: dict) -> None:
             lines.append(f"<div class='l ok'>✓ {total} lines missed by fetch across {len(counters)} page{'s' if len(counters) != 1 else ''}{seconds}</div>")
         elif status == "running":
             lines.append("<div class='l mut'>reading the page, then clicking everything a fetch tool cannot…</div>")
+        else:
+            lines.append("<div class='l mut'>this run did not finish its reveal (Steel session limit reached while other runs were open); press the button again</div>")
     elif kind == "COUNTRIES":
         by_c: dict = {}
         for o in borders:
@@ -413,7 +415,8 @@ def render_live_section(followed_runs: list[str] | None = None, on_launch=None) 
             st.markdown("<div class='lv-log'>" + ("<br>".join(trace[-40:][::-1]) or "<span class='d'>Waiting for the first browser.</span>") + "</div>", unsafe_allow_html=True)
 
             st.markdown("**What the logic is doing**")
-            for rid in followed:
+            order = {"parse": 0, "borders": 1, "login": 2}
+            for rid in sorted(followed, key=lambda r: order.get(r.split("-")[1] if "-" in r else "", 9)):
                 _story_card(rid, stats)
 
     live_body()

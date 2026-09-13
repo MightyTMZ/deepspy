@@ -20,6 +20,7 @@ import requests
 import streamlit as st
 
 from live_section import render_live_section
+from benchmark_section import render_benchmark_section
 
 API = os.environ.get("PERISCOPE_API_URL", "http://localhost:4747").rstrip("/")
 DATA_DIR = os.environ.get("PERISCOPE_DATA_DIR", str(Path(__file__).resolve().parent.parent / "data"))
