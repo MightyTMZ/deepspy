@@ -1,5 +1,23 @@
 # Periscope
 
+<p align="center">
+  <img src="docs/images/live-view.png" alt="Periscope live view: Steel browsers parsing a pricing page from three countries and signing in past the login" width="900">
+</p>
+
+<p align="center">
+  <a href="https://steel.dev"><img alt="Steel" src="https://img.shields.io/badge/Steel-cloud%20browsers-6d28d9?style=for-the-badge"></a>
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-24-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white">
+  <img alt="Playwright" src="https://img.shields.io/badge/Playwright-core-2EAD33?style=for-the-badge&logo=playwright&logoColor=white">
+  <img alt="Claude" src="https://img.shields.io/badge/Claude-Opus%205-D97757?style=for-the-badge&logo=anthropic&logoColor=white">
+  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-front%20end-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white">
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-system%20of%20record-003B57?style=for-the-badge&logo=sqlite&logoColor=white">
+  <img alt="Qdrant" src="https://img.shields.io/badge/Qdrant-vectors-DC244C?style=for-the-badge&logo=qdrant&logoColor=white">
+  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-78%20tests-6E9F18?style=for-the-badge&logo=vitest&logoColor=white">
+  <img alt="pnpm" src="https://img.shields.io/badge/pnpm-10-F69220?style=for-the-badge&logo=pnpm&logoColor=white">
+</p>
+
 **Super parsers for your competitors. Every page, every click, every country, then past the login.**
 
 Every research tool reads what a website serves. Periscope reads what a website hides: the pricing behind the annual toggle, the limits inside an accordion, the price a customer in Germany sees, the plan facts that only exist inside the product after sign-in. It runs on [Steel](https://steel.dev) cloud browsers and turns a competitor's whole web space into evidence-linked intelligence.
@@ -25,6 +43,36 @@ Built at the UTMIST × WAT.ai *Battle of the Schools* hackathon (September 12–
 - [Known limitations](#known-limitations)
 - [Repository layout](#repository-layout)
 - [Team](#team)
+
+---
+
+## Built with
+
+<p align="center">
+  <img src="https://cdn.simpleicons.org/typescript/3178C6" height="44" alt="TypeScript" title="TypeScript">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/nodedotjs/5FA04E" height="44" alt="Node.js" title="Node.js">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/python/3776AB" height="44" alt="Python" title="Python">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/playwright/2EAD33" height="44" alt="Playwright" title="Playwright">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/anthropic/D97757" height="44" alt="Claude by Anthropic" title="Claude by Anthropic">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/streamlit/FF4B4B" height="44" alt="Streamlit" title="Streamlit">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/sqlite/003B57" height="44" alt="SQLite" title="SQLite">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/qdrant/DC244C" height="44" alt="Qdrant" title="Qdrant">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="44" alt="Next.js (Helix Ledger test target)" title="Next.js (Helix Ledger test target)">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/cloudflare/F38020" height="44" alt="Cloudflare tunnel" title="Cloudflare tunnel">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/vitest/6E9F18" height="44" alt="Vitest" title="Vitest">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/pnpm/F69220" height="44" alt="pnpm" title="pnpm">
+</p>
+
+| | |
+|---|---|
+| **Browsers** | [Steel](https://steel.dev) cloud sessions over CDP, driven with `playwright-core`; [Stagehand](https://github.com/browserbase/stagehand) v4 attaches on top when a model key is present |
+| **Language and runtime** | TypeScript on Node 24, `pnpm` workspaces (`packages/contracts`, `packages/knowledge`), `tsx` for scripts |
+| **Model** | Claude Opus 5 through the Anthropic SDK, forced tool schemas, every extracted row bound to observation ids |
+| **Storage** | SQLite (`better-sqlite3`, versioned migrations, micro-dollar accounting), Qdrant for vectors, MiniLM embeddings |
+| **API** | Dependency-free `node:http`: JSON routes, server-sent events, idempotency keys |
+| **Front end** | Streamlit, with Steel's live session player embedded per browser |
+| **Tests** | Vitest, local Chrome against HTML fixtures, in-memory SQLite, fake Steel segment and fake model |
+| **Test target** | Helix Ledger, a Next.js SaaS built for the benchmark, deployed on Vercel and reachable through a Cloudflare tunnel |
 
 ---
 
@@ -172,7 +220,7 @@ Open http://localhost:8502. Without a Steel key every read route still works fro
 
 ## The demo
 
-The demo target is **Helix Ledger**, a fictional SaaS the team built as a controlled test ([FahadNafeesAhmed/test_saas_startup](https://github.com/FahadNafeesAhmed/test_saas_startup)): 18 lines hidden behind interactions on its pricing page, three country variants with a German cookie wall, and a dashboard behind an ALTCHA-protected login with planted facts. Steel's browsers run in the cloud, so the target needs a public URL (a Cloudflare quick tunnel works).
+The demo target is **Helix Ledger**, a fictional SaaS the team built as a controlled test ([FahadNafeesAhmed/test_saas_startup](https://github.com/FahadNafeesAhmed/test_saas_startup), live at [testsaasstartup.vercel.app](https://testsaasstartup.vercel.app)): 18 lines hidden behind interactions on its pricing page, three country variants with a German cookie wall, and a dashboard behind an ALTCHA-protected login with planted facts. Steel's browsers run in the cloud, so the target needs a public URL; the Vercel deployment or a Cloudflare quick tunnel both work.
 
 One button on the main page launches three runs at once:
 
@@ -252,6 +300,10 @@ Offline tests run against local HTML fixtures in `fixtures/` with a local Chrome
 | **Periscope on Steel** | **63 / 65** | **58** |
 
 The 41-fact gap is exactly the content behind actions: modal descriptions, FAQ answers, annual tiers, the compare table, the whitepaper, and every dashboard fact behind the login. Full table: `benchmarks/results-2026-09-13-14-16.md`.
+
+<p align="center">
+  <img src="docs/images/benchmark.png" alt="Benchmark chart and group table on the front end" width="900">
+</p>
 
 ## Safety and secrets
 
