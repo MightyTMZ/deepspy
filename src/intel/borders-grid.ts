@@ -26,7 +26,7 @@ export interface BordersGrid {
   differsByDevice: boolean;
 }
 
-export const PRICE = /(\$|€|£|CA\$|US\$|C\$|A\$|¥|₹|kr|CHF|zł)\s?\d|\d+([.,]\d+)?\s?(€|EUR|USD|CAD|GBP|CHF|kr|zł)\b|\d+([.,]\d+)?\s*(\/|per|pro)\s*(mo|month|monat|mois|yr|year|jahr|user|seat)/i;
+export const PRICE = /(\$|€|£|CA\$|US\$|C\$|A\$|¥|₹|kr|CHF|zł)\s?\d|\d+([.,]\d+)?\s?(€|EUR|USD|CAD|GBP|CHF|kr|zł)(?!\w)|\d+([.,]\d+)?\s*(\/|per|pro)\s*(mo|month|monat|mois|yr|year|jahr|user|seat)/i;
 
 export function vantageKey(o: Observation): string {
   return `${o.vantage.country ?? "-"}/${o.vantage.device}`;
