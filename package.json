@@ -2,11 +2,17 @@
   "name": "periscope",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc -b",
     "test": "vitest",
-    "test:live": "vitest --config vitest.live.config.ts"
+    "test:live": "vitest --config vitest.live.config.ts",
+    "test:steel": "vitest run test/steel",
+    "test:steel:live": "vitest run --config vitest.live.config.ts test/steel",
+    "setup-account": "tsx src/steel/setup-account.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",
@@ -19,7 +25,10 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "tsx": "^4.19.0"
   },
-  "workspaces": ["packages/*"]
+  "workspaces": [
+    "packages/*"
+  ]
 }
