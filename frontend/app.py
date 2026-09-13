@@ -299,59 +299,13 @@ with left_col:
             st.success(f"Started {len(started)} run(s).")
             st.rerun()
 
-    # ---------------- market: latest run per competitor ----------------
+    # ---------------- benchmark against the traditional research tools (segment C) ----------------
     _, runs_body = api_get("/runs", limit=100)
     all_runs = runs_body.get("runs", []) if isinstance(runs_body, dict) else []
-    if not st.session_state.active_runs and all_runs:
-        names = [c["name"] for c in competitors if c.get("name")]
-        rows = market_rows(all_runs, names)
-        if any(r.get("run") for r in rows):
-            st.markdown("##### The market, seen from Steel")
-            st.markdown('<span class="muted">Latest run per competitor. The red number is what a fetch tool never returned on that page.</span>', unsafe_allow_html=True)
-            for r in rows:
-                if not r.get("run"):
-                    st.markdown(f'<div class="mono"><strong>{r["competitor"]}</strong> <span class="muted">not run yet</span></div>', unsafe_allow_html=True)
-                    continue
-                c_num, c_body, c_btn = st.columns([1, 6, 1])
-                with c_num:
-                    st.markdown(f'<div class="counter">{r["counter"]}</div><div class="counter-label">missed by fetch</div>', unsafe_allow_html=True)
-                with c_body:
-                    via = ", ".join(f"{k} ({v})" for k, v in r["actions"]) or "no action needed"
-                    docs = f", {r['documents']} documents" if r["documents"] else ""
-                    st.markdown(
-                        f'<strong>{r["competitor"]}</strong> <span class="mono muted">{r["url"]}</span><br>'
-                        f'<span class="muted">fetch saw {r["surface"]} lines · Periscope revealed {r["hidden"]} more, {r["priced"]} of them prices'
-                        f'{docs} · {r["seconds"]} s · via {via}</span>',
-                        unsafe_allow_html=True,
-                    )
-                    for o in r["picks"]:
-                        label = (o.get("revealedBy") or {}).get("label") or ""
-                        st.markdown(f'<div class="hidden-line">{o["text"][:150]}<span class="muted"> · {label}</span></div>', unsafe_allow_html=True)
-                with c_btn:
-                    if st.button("Open", key=f"market_{r['run']}"):
-                        st.session_state.active_runs = [r["run"]]
-                        st.session_state.chat_messages = []
-                        st.rerun()
-            st.divider()
+    if not st.session_state.active_runs:
+        render_benchmark_section()
+        st.divider()
 
-    # ---------------- run picker ----------------
-    if not st.session_state.active_runs and all_runs:
-        st.markdown("##### All runs")
-        for r in all_runs[:15]:
-            c_info, c_btn = st.columns([5, 1])
-            with c_info:
-                st.markdown(
-                    f'<span class="mono">{r["id"]}</span> <span class="muted">{", ".join(r.get("competitors", []))}</span> '
-                    f'&nbsp; <strong>{r["status"]}</strong> &nbsp; {r["observations"]} observations &nbsp; ${r["spentUsd"]:.2f}',
-                    unsafe_allow_html=True,
-                )
-            with c_btn:
-                if st.button("Open", key=f"open_{r['id']}"):
-                    st.session_state.active_runs = [r["id"]]
-                    st.session_state.chat_messages = []
-                    st.rerun()
-
-    # ---------------- active run(s) ----------------
     any_live = False
     for run_id in st.session_state.active_runs:
         code, view = api_get(f"/runs/{run_id}")

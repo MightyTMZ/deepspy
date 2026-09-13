@@ -9,6 +9,7 @@ API only (docs/api.md): GET /sessions, /handoffs, /runs, /runs/:id, /runs/:id/ev
 """
 
 import os
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -157,6 +158,121 @@ def _event_line(e: dict, stats: dict) -> str | None:
     return None
 
 
+
+# ---------------------------------------------------------------------------------------------------------------
+# One compact story per run: what the agent did, in sentences, with every Steel feature as a badge
+# ---------------------------------------------------------------------------------------------------------------
+_PRICE = re.compile(r"(\$|€|£|CA\$)\s?\d|\d+([.,]\d+)?\s?(€|EUR)")
+STORY_CSS = """
+<style>
+.story{border:1px solid #2a3340;border-radius:8px;padding:.6rem .8rem;margin:0 0 .6rem 0;background:#0f141b}
+.story .h{font-weight:600;margin-bottom:.3rem}
+.story .l{font-size:.85rem;color:#c9d1d9;padding:.12rem 0;line-height:1.4}
+.story .l b{color:#ffb4b4}.story .ok{color:#a8f0c6}.story .warn{color:#ffd58a}.story .mut{color:#6b7280}
+.story .steel{display:inline-block;padding:.02rem .4rem;border-radius:.4rem;background:#2b2140;color:#d9c8ff;font-size:.7rem;margin-left:.25rem}
+</style>
+"""
+
+VERBS = {"toggle": "flipped", "click": "opened", "select": "selected", "hover": "hovered", "scroll": "scrolled to", "none": "read"}
+
+
+def _seconds(run: dict) -> str:
+    try:
+        r = run["run"]
+        a = datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00"))
+        b = datetime.fromisoformat(r["updatedAt"].replace("Z", "+00:00"))
+        return f" · {int((b - a).total_seconds())} s"
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _story_card(rid: str, stats: dict) -> None:
+    run = _get(f"/runs/{rid}")
+    if not run.get("ok"):
+        return
+    events = _get(f"/runs/{rid}/events", format="json").get("events", [])
+    jobs = run.get("jobs") or []
+    purposes = sorted({j.get("purpose") for j in jobs if j.get("purpose")})
+    kind = "LOG IN" if "walker" in purposes else "COUNTRIES" if "borders" in purposes else "PARSE"
+    status = (run.get("run") or {}).get("status", "")
+    obs = [e["event"]["data"] for e in events if e.get("type") == "observation"]
+    hidden = [o for o in obs if o.get("layer") == "hidden"]
+    borders = [o for o in obs if o.get("layer") == "borders"]
+    interior = [o for o in obs if o.get("layer") == "interior"]
+    countries = sorted({(o.get("vantage") or {}).get("country") for o in obs if (o.get("vantage") or {}).get("country")})
+    devices = sorted({(o.get("vantage") or {}).get("device", "desktop") for o in obs})
+    counters: dict = {}
+    for e in events:
+        if e.get("type") == "counter":
+            d = e["event"]["data"]
+            if isinstance(d.get("missed"), int):
+                counters[d["url"]] = max(counters.get(d["url"], 0), d["missed"])
+    handoffs = [e["event"]["data"] for e in events if e.get("type") == "handoff"]
+    captcha = [e["event"]["data"]["reason"].split(":")[-1] for e in events if e.get("type") == "job_state" and "captcha" in (e["event"]["data"].get("reason") or "")]
+    seconds = _seconds(run)
+
+    n_browsers = 6 if kind == "COUNTRIES" else 1
+    badges = [f"<span class='steel'>{n_browsers} Steel browser{'s' if n_browsers > 1 else ''}</span>"]
+    if countries:
+        badges.append(f"<span class='steel'>Steel proxies: {' '.join(countries)}</span>")
+    if "mobile" in devices:
+        badges.append("<span class='steel'>device emulation</span>")
+    if kind == "LOG IN":
+        badges.append("<span class='steel'>profile kept</span>")
+    if captcha:
+        badges.append("<span class='steel'>CAPTCHA solver</span>")
+    if handoffs:
+        badges.append("<span class='steel'>live view handoff</span>")
+
+    lines = []
+    if kind == "PARSE":
+        by_label: dict = {}
+        action_of: dict = {}
+        for o in hidden:
+            if o.get("missedByFetch"):
+                rb = o.get("revealedBy") or {}
+                lbl = rb.get("label") or rb.get("action") or "page"
+                by_label[lbl] = by_label.get(lbl, 0) + 1
+                action_of[lbl] = rb.get("action", "click")
+        for lbl, n in sorted(by_label.items(), key=lambda kv: -kv[1])[:5]:
+            lines.append(f"<div class='l'>{VERBS.get(action_of.get(lbl), 'used')} <b>{lbl[:40]}</b> → {n} line{'s' if n != 1 else ''} a fetch tool never saw</div>")
+        total = sum(counters.values())
+        if total:
+            lines.append(f"<div class='l ok'>✓ {total} lines missed by fetch across {len(counters)} page{'s' if len(counters) != 1 else ''}{seconds}</div>")
+        elif status == "running":
+            lines.append("<div class='l mut'>reading the page, then clicking everything a fetch tool cannot…</div>")
+    elif kind == "COUNTRIES":
+        by_c: dict = {}
+        for o in borders:
+            c = (o.get("vantage") or {}).get("country")
+            if c and _PRICE.search(o.get("text", "")):
+                by_c.setdefault(c, [])
+                if o["text"] not in by_c[c] and len(by_c[c]) < 3:
+                    by_c[c].append(o["text"])
+        for c, prices in by_c.items():
+            lines.append(f"<div class='l'>from <b>{COUNTRY_NAMES.get(c, c)}</b> through a Steel proxy: {' · '.join(x[:26] for x in prices)}</div>")
+        if len(by_c) > 1:
+            lines.append(f"<div class='l ok'>✓ prices differ by country, seen in {len(borders)} lines from 6 browsers at once{seconds}</div>")
+        elif status == "running":
+            lines.append("<div class='l mut'>opening six browsers in three countries…</div>")
+    else:
+        if handoffs:
+            last = handoffs[-1]
+            state = last.get("state")
+            msg = {"awaiting_human": "waiting for a human in Steel's live view", "resumed": "a human cleared it, the walk resumed in the same browser", "abandoned": "nobody cleared it in time"}.get(state, state)
+            lines.append(f"<div class='l warn'>⛔ {last.get('wall')} wall → {msg}</div>")
+        if captcha:
+            lines.append(f"<div class='l'>Steel CAPTCHA solver ran first: <b>{captcha[-1]}</b></div>")
+        if interior:
+            pages = sorted({o.get("url", "").rstrip("/").split("/")[-1] or "dashboard" for o in interior})
+            lines.append(f"<div class='l ok'>✓ inside: {len(interior)} facts from {len(pages)} screens ({', '.join(pages[:6])})</div>")
+            for o in interior[:3]:
+                lines.append(f"<div class='l mut'>{o.get('text', '')[:90]}</div>")
+        if not handoffs and not interior:
+            lines.append("<div class='l mut'>opening the sign-in page…</div>")
+    competitor = (jobs[0].get("competitor") if jobs else "") or ""
+    st.markdown(STORY_CSS + f"<div class='story'><div class='h'><span class='lv-tag blue'>{kind}</span> {competitor} {''.join(badges)} <span class='mut'>· {status}</span></div>" + "".join(lines) + "</div>", unsafe_allow_html=True)
+
 # ---------------------------------------------------------------------------------------------------------------
 # Intelligence under the live view
 # ---------------------------------------------------------------------------------------------------------------
@@ -297,27 +413,8 @@ def render_live_section(followed_runs: list[str] | None = None, on_launch=None) 
             st.markdown("<div class='lv-log'>" + ("<br>".join(trace[-40:][::-1]) or "<span class='d'>Waiting for the first browser.</span>") + "</div>", unsafe_allow_html=True)
 
             st.markdown("**What the logic is doing**")
-            lines = []
-            missed = 0
-            observations = 0
             for rid in followed:
-                run = _get(f"/runs/{rid}")
-                by_url = {}
-                for c in run.get("counters") or []:
-                    if isinstance(c.get("missed"), int):
-                        by_url[c.get("url")] = max(by_url.get(c.get("url"), 0), c["missed"])
-                missed += sum(by_url.values())
-                observations += (run.get("counts") or {}).get("observations", 0)
-                for e in _get(f"/runs/{rid}/events", format="json").get("events", [])[-300:]:
-                    line = _event_line(e, stats)
-                    if line:
-                        lines.append((e.get("createdAt", ""), f"<span class='d'>{rid.split('-')[1] if '-' in rid else rid}</span> {line}"))
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Missed by fetch", missed)
-            m2.metric("Observations", observations)
-            m3.metric("Runs followed", len(followed))
-            lines.sort(key=lambda x: x[0])
-            st.markdown("<div class='lv-log'>" + ("<br>".join(l for _, l in lines[-120:][::-1]) or "<span class='d'>Launch the demo to follow its logic here.</span>") + "</div>", unsafe_allow_html=True)
+                _story_card(rid, stats)
 
     live_body()
 
