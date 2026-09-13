@@ -48,7 +48,7 @@ export class HandoffController {
       const result = await waitForSteelSolve(
         () => this.opts.captchaStatus!(wall.sessionId),
         () => handle.page.content(),
-        { timeoutMs: this.opts.captchaWaitMs ?? 30_000 },
+        { timeoutMs: this.opts.captchaWaitMs ?? 45_000 },
       );
       await this.sink.write({ type: "job_state", data: { jobId: wall.jobId, state: "running", reason: `captcha:${result.outcome}${"reason" in result ? ":" + result.reason : ""}` } });
       if (result.outcome === "solved") return { jobId: wall.jobId, state: "solved_by_steel" };

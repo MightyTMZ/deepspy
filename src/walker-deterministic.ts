@@ -118,7 +118,8 @@ export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise
     totalSteps++;
 
     try {
-      await page.goto(next.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      // Full load, not just DOM: Steel's CAPTCHA solver attaches only after the load event (C22).
+      await page.goto(next.href, { waitUntil: "load", timeout: 30_000 }).catch(async () => { await page.goto(next.href, { waitUntil: "domcontentloaded", timeout: 30_000 }); });
       await page.waitForTimeout(800);
     } catch {
       continue;
