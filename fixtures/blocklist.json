@@ -1,0 +1,30 @@
+{
+  "blockedClickLabels": [
+    "pay",
+    "buy",
+    "delete",
+    "remove",
+    "send",
+    "invite",
+    "publish",
+    "upgrade",
+    "subscribe",
+    "confirm order",
+    "submit"
+  ],
+  "blockedInputFields": [
+    "password",
+    "card",
+    "cvv",
+    "expiry",
+    "payment",
+    "ssn",
+    "passport"
+  ],
+  "blockedInputFieldSelectors": [
+    "[type=password]",
+    "[autocomplete=cc-number]",
+    "[autocomplete=cc-csc]",
+    "[autocomplete=cc-exp]"
+  ]
+}
