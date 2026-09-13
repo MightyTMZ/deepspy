@@ -233,6 +233,16 @@ async function selects(ctx: Ctx): Promise<void> {
       obs = markMissedByFetch(obs, ctx.cfg.surfaceBaseline);
       if (!ctx.seen.has(obs.text)) { ctx.seen.add(obs.text); await emit(ctx, obs); ctx.strategies.selects = (ctx.strategies.selects ?? 0) + 1; }
     }
+    // Choosing an option often reveals text ("Volume pricing from ..."): select each one, capture, then restore.
+    const values = await sel.locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value)).catch(() => [] as string[]);
+    const initial = await sel.inputValue().catch(() => values[0]);
+    for (const v of values.slice(0, 8)) {
+      if (v === initial || ctx.blocked.test(v)) continue;
+      try { await sel.selectOption(v, { timeout: 2000 }); ctx.actions++; } catch { continue; }
+      await page.waitForTimeout(350);
+      await capture(ctx, "selects", { action: "select", label: `${label}: ${v}` });
+    }
+    if (initial !== undefined) await sel.selectOption(initial, { timeout: 2000 }).catch(() => undefined);
   }
 }
 
@@ -243,6 +253,21 @@ async function toggles(ctx: Ctx): Promise<void> {
   for (let i = 0; i < n; i++) {
     const el = t.nth(i);
     const label = (await labelOf(el)) || `toggle ${i + 1}`;
+    if (await guardedClick(ctx, el, label)) {
+      await capture(ctx, "toggles", { action: "toggle", label });
+      await guardedClick(ctx, el, label); // restore
+    }
+  }
+  // Pill switches: a button with no text (a knob) next to labels like "Monthly ... Annual".
+  const pills = page.locator("button").filter({ hasNotText: /\S/ });
+  const pc = Math.min(await pills.count(), 6);
+  for (let i = 0; i < pc; i++) {
+    const el = pills.nth(i);
+    const box = await el.boundingBox().catch(() => null);
+    if (!box || box.width > 120 || box.height > 60 || box.width < 20) continue;
+    const around = normalizeText(await el.evaluate((e) => (e.parentElement?.innerText ?? "")).catch(() => "")).slice(0, 40);
+    if (ctx.blocked.test(around) || /cookie/i.test(around)) continue;
+    const label = around ? `switch: ${around}` : `switch ${i + 1}`;
     if (await guardedClick(ctx, el, label)) {
       await capture(ctx, "toggles", { action: "toggle", label });
       await guardedClick(ctx, el, label); // restore
@@ -299,7 +324,7 @@ async function hover(ctx: Ctx): Promise<void> {
 
 async function modals(ctx: Ctx): Promise<void> {
   const page = ctx.cfg.page;
-  const triggers = page.locator("button, [role=button], a").filter({ hasText: /^(compare( plans)?|watch( demo| video)?|see demo|details|learn more|view details)$/i });
+  const triggers = page.locator("button, [role=button], a").filter({ hasText: /^(compare( plans| all plans)?|watch( demo| video)?|see demo|details|learn more|view details|see all features|all features)\s*[+\-–—▾▸›»]?\s*$/i });
   const n = Math.min(await triggers.count(), ctx.max);
   for (let i = 0; i < n; i++) {
     const el = triggers.nth(i); const label = await labelOf(el);
@@ -386,6 +411,7 @@ export async function revealDeterministic(cfg: DeterministicRevealConfig): Promi
   page.on("response", onResponse);
 
   if (page.url() !== cfg.url) await page.goto(cfg.url, { waitUntil: "load", timeout: 60_000 });
+  else await page.reload({ waitUntil: "load", timeout: 60_000 }).catch(() => undefined); // the listener must see the page's own API calls
   await page.waitForTimeout(1200);
 
   const baselineLines = await visibleLines(page);
