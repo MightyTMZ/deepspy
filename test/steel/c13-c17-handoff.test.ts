@@ -49,7 +49,7 @@ describe("handoff controller", () => {
   it("C15: after a login wall, resume verifies the signed-in indicator", async () => {
     await page.goto(fixtureUrl("login-wall.html"));
     const { d } = driver(); const sink = new MemorySink();
-    const hc = new HandoffController(d, sink, { signedInIndicator: async () => "Workspace settings" });
+    const hc = new HandoffController(d, sink, { signedInIndicator: async (_h) => "Workspace settings" });
     const evt = (await hc.onWall(wall("login"), fakeHandle(page))) as HandoffEvent;
     expect((await hc.resume("job1", evt.generation)).ok).toBe(false); // still on the login page
     await page.goto(fixtureUrl("settings-page.html"));               // human logged in
@@ -74,5 +74,21 @@ describe("handoff controller", () => {
     await new Promise((r) => setTimeout(r, 500)); // real timer; fake timers would stall Playwright
     expect(calls.some((c) => c.startsWith("fail:job1:partial"))).toBe(true);
     expect(sink.ofType("handoff").at(-1)?.data.state).toBe("abandoned");
+  });
+});
+
+describe("waitForResolution (coordinator integration)", () => {
+  it("resolves 'resumed' when the human resumes and 'abandoned' when the timer expires", async () => {
+    await page.goto(fixtureUrl("captcha-wall.html"));
+    const { d } = driver(); const sink = new MemorySink();
+    const hc = new HandoffController(d, sink, { humanTimeoutMs: 300 });
+    const evt = (await hc.onWall(wall("captcha"), fakeHandle(page))) as HandoffEvent;
+    const waiting = hc.waitForResolution("job1");
+    await hc.resume("job1", evt.generation);
+    expect(await waiting).toBe("resumed");
+    const evt2 = (await hc.onWall(wall("kyc"), fakeHandle(page))) as HandoffEvent;
+    void evt2;
+    expect(await hc.waitForResolution("job1")).toBe("abandoned");
+    expect(await hc.waitForResolution("nothing-pending")).toBe("resumed");
   });
 });

@@ -11,6 +11,10 @@ export interface ProfileRecord {
   signedInIndicator: string; // text or selector that proves the login worked
   createdAt: string;
   ready: boolean;
+  /** Steel credentials namespace for this account, when a credential was stored (setup-credential CLI). */
+  credentialNamespace?: string;
+  /** Exact origin the credential is bound to. */
+  loginOrigin?: string;
 }
 
 const file = () => path.join(process.env.PERISCOPE_DATA_DIR ?? "./data", "profiles.local.json");

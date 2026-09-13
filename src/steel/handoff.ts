@@ -24,14 +24,15 @@ export interface JobDriver {
 export interface HandoffOptions {
   humanTimeoutMs?: number;      // default 10 minutes
   inFlightTimeoutMs?: number;   // default 20 seconds
-  signedInIndicator?: (jobId: string) => Promise<string | null>;
+  /** Text that proves the account is signed in; resolved from the session's profile. */
+  signedInIndicator?: (handle: SessionHandle) => Promise<string | null>;
   notify?: (evt: HandoffEvent, wall: WallDetected) => Promise<void>;
   /** Steel solver status for a session. When set, CAPTCHA walls try Steel first and only escalate on failure. */
   captchaStatus?: (sessionId: string) => Promise<CaptchaStatus>;
   captchaWaitMs?: number;       // default 30 seconds
 }
 
-interface Pending { wall: WallDetected; handle: SessionHandle; generation: number; timer: NodeJS.Timeout; }
+interface Pending { wall: WallDetected; handle: SessionHandle; generation: number; timer: NodeJS.Timeout; waiters: Array<(r: "resumed" | "abandoned") => void>; }
 
 export type OnWallResult = HandoffEvent | { jobId: string; state: "solved_by_steel" };
 
@@ -58,7 +59,7 @@ export class HandoffController {
     this.generations.set(wall.jobId, generation);
     const evt: HandoffEvent = { jobId: wall.jobId, viewerUrl: handle.viewerUrl, wall: wall.wall, generation, state: "awaiting_human" };
     const timer = setTimeout(() => void this.abandon(wall.jobId, "human timer expired"), this.opts.humanTimeoutMs ?? 10 * 60 * 1000);
-    this.pending.set(wall.jobId, { wall, handle, generation, timer });
+    this.pending.set(wall.jobId, { wall, handle, generation, timer, waiters: [] });
     await this.sink.write({ type: "job_state", data: { jobId: wall.jobId, state: "awaiting_human", reason: wall.wall } });
     await this.sink.write({ type: "handoff", data: evt });
     if (this.opts.notify) await this.opts.notify(evt, wall);
@@ -75,7 +76,7 @@ export class HandoffController {
       if (still.wall === "payment") return { ok: false, reason: "payment field still visible" };
     }
     if (p.wall.wall === "login" || p.wall.wall === "2fa" || p.wall.wall === "email_code") {
-      const indicator = this.opts.signedInIndicator ? await this.opts.signedInIndicator(jobId) : null;
+      const indicator = this.opts.signedInIndicator ? await this.opts.signedInIndicator(p.handle) : null;
       if (indicator) {
         const text = await p.handle.page.locator("body").innerText().catch(() => "");
         if (!text.includes(indicator)) return { ok: false, reason: "signed-in indicator not found after resume" };
@@ -86,7 +87,15 @@ export class HandoffController {
     await this.sink.write({ type: "handoff", data: { jobId, viewerUrl: p.handle.viewerUrl, wall: p.wall.wall, generation, state: "resumed" } });
     await this.sink.write({ type: "job_state", data: { jobId, state: "running" } });
     this.driver.resume(jobId);
+    for (const w of p.waiters) w("resumed");
     return { ok: true };
+  }
+
+  /** Resolves when the human resumes the job or the handoff is abandoned. Resolves "resumed" at once if nothing is pending. */
+  waitForResolution(jobId: string): Promise<"resumed" | "abandoned"> {
+    const p = this.pending.get(jobId);
+    if (!p) return Promise.resolve("resumed");
+    return new Promise((resolve) => p.waiters.push(resolve));
   }
 
   isPending(jobId: string): boolean { return this.pending.has(jobId); }
@@ -98,5 +107,6 @@ export class HandoffController {
     this.pending.delete(jobId);
     await this.sink.write({ type: "handoff", data: { jobId, viewerUrl: p.handle.viewerUrl, wall: p.wall.wall, generation: p.generation, state: "abandoned" } });
     await this.driver.fail(jobId, "partial", reason);
+    for (const w of p.waiters) w("abandoned");
   }
 }

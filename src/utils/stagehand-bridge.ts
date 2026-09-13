@@ -21,7 +21,8 @@ export async function createStagehand(
   const stagehand = await Stagehand.create({
     browser,
     model: {
-      modelName: "anthropic/claude-opus-4-5",
+      // Team decision: Opus family. Stagehand 4.1.0 lists claude-opus-4-8 as its newest Opus; override with STAGEHAND_MODEL.
+      modelName: (process.env.STAGEHAND_MODEL ?? "anthropic/claude-opus-4-8") as "anthropic/claude-opus-4-8",
       apiKey: process.env.ANTHROPIC_API_KEY,
     },
   });

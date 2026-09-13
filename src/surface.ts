@@ -22,13 +22,16 @@ export async function scrapeSurface(params: {
   vantage: Vantage;
   sink: EventSink;
 }): Promise<SurfaceResult> {
+  // Live finding (Fahad, Sept 13): on Framer/JS-heavy sites such as ornn.com "readability" comes back nearly empty
+  // (15 chars) while "markdown" is complete (2.6k chars), so markdown is the block source; html is kept as the raw
+  // artifact for the B6 raw-source proof. Both formats verified live on the same URL.
   const response = await params.steel.scrape({
     url: params.url,
-    format: ["html", "readability"],
+    format: ["markdown", "html"],
   });
 
   const rawHtml = (response as any).content?.html ?? "";
-  const rawMarkdown = (response as any).content?.readability ?? "";
+  const rawMarkdown = (response as any).content?.markdown ?? (response as any).content?.readability ?? "";
 
   // Parse into text blocks, deduplicate nav
   const blocks = deduplicateNav(splitBlocks(rawMarkdown || rawHtml));

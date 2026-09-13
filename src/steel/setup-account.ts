@@ -3,9 +3,10 @@
 //   npm run setup-account -- --competitor linear --url https://linear.app/login --indicator "Inbox" --account trial1 --country CA
 //
 // The human types the password in the live view. Nothing here ever sees it.
+// Steel assigns the profile id at session create (persistProfile), and the profile turns READY after release.
 
-import { SteelAdapter, defaultVantage } from "./steel-adapter.js";
-import { saveProfile } from "./profiles.js";
+import { SteelAdapter, defaultVantage, PROFILE_SETTLE_MS } from "./steel-adapter.js";
+import { saveProfile, waitUntilReady } from "./profiles.js";
 
 function arg(name: string, fallback?: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -22,6 +23,7 @@ const country = arg("country", "CA");
 
 const adapter = new SteelAdapter({ apiKey: process.env.STEEL_API_KEY ?? "" });
 const handle = await adapter.open({ vantage: defaultVantage({ country, authenticated: true }), purpose: "setup", accountRef });
+if (!handle.profileId) { await handle.release(); throw new Error("Steel did not return a profileId; persistProfile may be unsupported on this plan"); }
 
 console.log("\nOpen this live view and log in by hand:\n  " + handle.viewerUrl + "\n");
 await handle.page.goto(url, { waitUntil: "domcontentloaded" });
@@ -40,7 +42,12 @@ if (!signedIn) {
   process.exit(1);
 }
 
-await handle.release(); // persistProfile was set on create; Steel saves the profile on release
-const profileId = handle.profileId ?? handle.sessionId; // TODO(C5): read the real profile id from the released session
+const profileId = handle.profileId;
+console.log(`Signed in. Waiting ${PROFILE_SETTLE_MS / 1000}s so Chrome flushes cookies before the profile snapshot...`);
+await handle.page.waitForTimeout(PROFILE_SETTLE_MS);
+await handle.release(); // Steel persists the profile on release
 saveProfile({ profileId, competitor, accountRef, homeCountry: country, signedInIndicator: indicator, createdAt: new Date().toISOString(), ready: false });
-console.log(`Profile recorded for ${competitor}/${accountRef}: ${profileId}. Run C6 readiness before first use.`);
+console.log(`Profile ${profileId} recorded for ${competitor}/${accountRef}. Waiting for Steel to mark it READY...`);
+await waitUntilReady(profileId, (id) => adapter.isProfileReady(id), 120_000);
+saveProfile({ profileId, competitor, accountRef, homeCountry: country, signedInIndicator: indicator, createdAt: new Date().toISOString(), ready: true });
+console.log("Profile READY. Every walker for this competitor now starts signed in.");
