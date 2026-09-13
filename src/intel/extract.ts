@@ -93,10 +93,10 @@ export async function extractFeatures(opts: { storage: Storage; runId: string; c
     "Rules: use only features from the taxonomy, spelled exactly. status is 'observed' when at least one observation shows the feature exists or is mentioned as available,",
     "'absent' only when an observation states it is not offered, otherwise 'unknown'. Never claim a feature works; you only saw it mentioned.",
     "value is the concrete detail (a price, a limit, a plan name) copied from the observations, or null. evidenceIds must list the ids of the observations that support the row.",
-    "Do not invent ids. Omit taxonomy features with no relevant observation, or give them status 'unknown' with an empty evidenceIds.",
+    "Do not invent ids. Omit taxonomy features with no relevant observation entirely; do not emit 'unknown' rows. List at most 5 evidence ids per row and keep value under 120 characters.",
   ].join(" ");
   const user = `Competitor: ${competitor}\nTaxonomy: ${taxonomy.join(" | ")}\n\nObservations:\n${lines}`;
-  const { input, tokensIn, tokensOut } = await opts.complete({ system, user, toolName: "record_features", schema: ROWS_SCHEMA, maxTokens: 4000 });
+  const { input, tokensIn, tokensOut } = await opts.complete({ system, user, toolName: "record_features", schema: ROWS_SCHEMA, maxTokens: 8000 });
 
   const raw = ((input as { rows?: unknown }).rows ?? []) as Array<Partial<ExtractedRow>>;
   const rows: ExtractedRow[] = []; let rejected = 0;

@@ -10,6 +10,31 @@
     "total": 5,
     "observations": [
       {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Acceptable Use Policy",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "text",
+        "text": "Acceptable Use Policy",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:56:33.076Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "steelSessionId": "sess-1",
+        "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+      },
+      {
         "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Legal",
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
@@ -25,7 +50,7 @@
           "authenticated": false
         },
         "perception": "dom",
-        "capturedAt": "2026-09-13T10:43:54.863Z"
+        "capturedAt": "2026-09-13T10:56:33.076Z"
       },
       {
         "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
@@ -43,7 +68,7 @@
           "authenticated": false
         },
         "perception": "dom",
-        "capturedAt": "2026-09-13T10:43:54.863Z",
+        "capturedAt": "2026-09-13T10:56:33.076Z",
         "missedByFetch": true,
         "revealedBy": {
           "action": "click",
@@ -68,32 +93,7 @@
           "authenticated": false
         },
         "perception": "dom",
-        "capturedAt": "2026-09-13T10:43:54.863Z",
-        "missedByFetch": true,
-        "revealedBy": {
-          "action": "click",
-          "label": "Legal"
-        },
-        "steelSessionId": "sess-1",
-        "viewerUrl": "https://app.steel.dev/sessions/sess-1"
-      },
-      {
-        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Acceptable Use Policy",
-        "runId": "run-saturday",
-        "jobId": "run-saturday-reveal",
-        "competitor": "ornn",
-        "url": "https://ornn.com/regulatory",
-        "layer": "hidden",
-        "source": "browser",
-        "kind": "text",
-        "text": "Acceptable Use Policy",
-        "vantage": {
-          "country": null,
-          "device": "desktop",
-          "authenticated": false
-        },
-        "perception": "dom",
-        "capturedAt": "2026-09-13T10:43:54.864Z",
+        "capturedAt": "2026-09-13T10:56:33.076Z",
         "missedByFetch": true,
         "revealedBy": {
           "action": "click",
@@ -118,7 +118,7 @@
           "authenticated": false
         },
         "perception": "dom",
-        "capturedAt": "2026-09-13T10:43:54.864Z",
+        "capturedAt": "2026-09-13T10:56:33.077Z",
         "missedByFetch": true,
         "revealedBy": {
           "action": "click",

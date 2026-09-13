@@ -13,14 +13,14 @@
     "ok": false,
     "reason": "steel not configured; run setup-account from the CLI",
     "setup": {
-      "id": "a320e5ab-c4ab-416b-9958-8fc9bbf67b7f",
+      "id": "663afb16-b165-430b-ad95-e12a7f6cd7eb",
       "competitor": "ornn",
       "url": "https://app.ornn.com/login",
       "indicator": "Dashboard",
       "accountRef": "trial1",
       "country": "CA",
       "state": "awaiting_login",
-      "createdAt": "2026-09-13T10:43:55.010Z"
+      "createdAt": "2026-09-13T10:56:33.260Z"
     }
   }
 }

@@ -12,7 +12,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "job_state",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.075Z",
         "event": {
           "type": "job_state",
           "data": {
@@ -26,7 +26,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.075Z",
         "event": {
           "type": "observation",
           "data": {
@@ -45,7 +45,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.863Z"
+            "capturedAt": "2026-09-13T10:56:33.075Z"
           }
         }
       },
@@ -54,7 +54,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.076Z",
         "event": {
           "type": "observation",
           "data": {
@@ -73,7 +73,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.863Z"
+            "capturedAt": "2026-09-13T10:56:33.076Z"
           }
         }
       },
@@ -82,7 +82,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.076Z",
         "event": {
           "type": "observation",
           "data": {
@@ -101,7 +101,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.863Z"
+            "capturedAt": "2026-09-13T10:56:33.076Z"
           }
         }
       },
@@ -110,7 +110,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.076Z",
         "event": {
           "type": "observation",
           "data": {
@@ -129,7 +129,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.863Z"
+            "capturedAt": "2026-09-13T10:56:33.076Z"
           }
         }
       },
@@ -138,7 +138,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.076Z",
         "event": {
           "type": "observation",
           "data": {
@@ -157,7 +157,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.863Z",
+            "capturedAt": "2026-09-13T10:56:33.076Z",
             "missedByFetch": true,
             "revealedBy": {
               "action": "click",
@@ -173,7 +173,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.863Z",
+        "createdAt": "2026-09-13T10:56:33.076Z",
         "event": {
           "type": "observation",
           "data": {
@@ -192,7 +192,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.863Z",
+            "capturedAt": "2026-09-13T10:56:33.076Z",
             "missedByFetch": true,
             "revealedBy": {
               "action": "click",
@@ -208,7 +208,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.076Z",
         "event": {
           "type": "observation",
           "data": {
@@ -227,7 +227,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.864Z",
+            "capturedAt": "2026-09-13T10:56:33.076Z",
             "missedByFetch": true,
             "revealedBy": {
               "action": "click",
@@ -243,7 +243,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "observation",
           "data": {
@@ -262,7 +262,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.864Z",
+            "capturedAt": "2026-09-13T10:56:33.077Z",
             "missedByFetch": true,
             "revealedBy": {
               "action": "click",
@@ -277,7 +277,7 @@
         "runId": "run-saturday",
         "jobId": null,
         "type": "counter",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "counter",
           "data": {
@@ -292,7 +292,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "job_state",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "job_state",
           "data": {
@@ -306,7 +306,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "job_state",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "job_state",
           "data": {
@@ -320,7 +320,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "observation",
           "data": {
@@ -339,7 +339,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.864Z"
+            "capturedAt": "2026-09-13T10:56:33.077Z"
           }
         }
       },
@@ -348,7 +348,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.864Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "observation",
           "data": {
@@ -367,7 +367,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.864Z"
+            "capturedAt": "2026-09-13T10:56:33.077Z"
           }
         }
       },
@@ -376,7 +376,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.865Z",
+        "createdAt": "2026-09-13T10:56:33.077Z",
         "event": {
           "type": "observation",
           "data": {
@@ -395,7 +395,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.865Z"
+            "capturedAt": "2026-09-13T10:56:33.077Z"
           }
         }
       },
@@ -404,7 +404,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.865Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -423,7 +423,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.865Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -432,7 +432,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.865Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -451,7 +451,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.865Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -460,7 +460,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.865Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -479,7 +479,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.865Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -488,7 +488,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.865Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -507,7 +507,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.865Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -516,7 +516,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.865Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -535,7 +535,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.865Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -544,7 +544,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -563,7 +563,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.866Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -572,7 +572,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "observation",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "observation",
           "data": {
@@ -591,7 +591,7 @@
               "authenticated": false
             },
             "perception": "dom",
-            "capturedAt": "2026-09-13T10:43:54.866Z"
+            "capturedAt": "2026-09-13T10:56:33.078Z"
           }
         }
       },
@@ -600,7 +600,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "handoff",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "handoff",
           "data": {
@@ -617,7 +617,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "handoff",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "handoff",
           "data": {
@@ -634,7 +634,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-reveal",
         "type": "receipt",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.078Z",
         "event": {
           "type": "receipt",
           "data": {
@@ -656,7 +656,7 @@
         "runId": "run-saturday",
         "jobId": "run-saturday-borders",
         "type": "job_state",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.079Z",
         "event": {
           "type": "job_state",
           "data": {
@@ -670,7 +670,7 @@
         "runId": "run-saturday",
         "jobId": null,
         "type": "run_done",
-        "createdAt": "2026-09-13T10:43:54.866Z",
+        "createdAt": "2026-09-13T10:56:33.079Z",
         "event": {
           "type": "run_done",
           "data": {
