@@ -323,7 +323,7 @@ with left_col:
             st.divider()
 
     # ---------------- live: the agents at work (segment C) ----------------
-    if not st.session_state.active_runs:
+    if True:  # always visible, also while a run is open
         def _add_helix(target: str) -> None:
             comps = load_competitors()
             if not any(c.get("name") == "helix-ledger" for c in comps):
