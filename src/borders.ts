@@ -60,6 +60,7 @@ export async function runBorders(
             handle,
             sink: config.sink,
             strategies: LIGHT_STRATEGIES, // borders compares the same page across vantages; a full reveal per vantage is too slow
+            emitBaselineAs: "borders",    // every vantage records what it saw, so the grid has rows to compare
           });
           if (!sh) return det.observations;
 

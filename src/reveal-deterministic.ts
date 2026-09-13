@@ -33,6 +33,8 @@ export interface DeterministicRevealConfig {
   blocklistPath?: string;           // default fixtures/blocklist.json
   /** Subset of strategies to run, in this order. Default: all. Borders uses a light set. */
   strategies?: StrategyName[];
+  /** Emit the baseline visible lines as observations under this layer (borders needs per-vantage rows). */
+  emitBaselineAs?: "borders" | "hidden";
 }
 
 export type StrategyName = "consent" | "tabs" | "selects" | "toggles" | "showMore" | "hover" | "modals" | "iframes" | "documents" | "hiddenApi";
@@ -373,6 +375,20 @@ export async function revealDeterministic(cfg: DeterministicRevealConfig): Promi
     max: cfg.maxActionsPerStrategy ?? 12, blocked: loadBlocklist(cfg.blocklistPath ?? "fixtures/blocklist.json"),
     strategies: {}, apiUrls,
   };
+
+  if (cfg.emitBaselineAs) {
+    for (const line of baselineLines) {
+      if (CODE_LIKE.test(line)) continue;
+      let obs = createObservation({
+        runId: cfg.runId, jobId: cfg.jobId, competitor: cfg.competitor, url: cfg.url,
+        layer: cfg.emitBaselineAs, source: "browser", kind: /\$|€|£|\d+(\.\d+)?\s*(\/|per)\s*(mo|month|yr|year|user|seat)/i.test(line) ? "price" : "text",
+        text: line, revealedBy: { action: "none" }, vantage: cfg.handle.vantage, perception: "dom", steelSessionId: cfg.handle.sessionId,
+      });
+      obs = markMissedByFetch(obs, cfg.surfaceBaseline);
+      ctx.observations.push(obs);
+      await cfg.sink.write({ type: "observation", data: obs });
+    }
+  }
 
   const all: Record<StrategyName, (c: Ctx) => Promise<void>> = {
     consent: consentWalls, tabs: tabsAndAccordions, selects, toggles, showMore, hover, modals, iframes, documents: (c) => documents(c), hiddenApi,
