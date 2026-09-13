@@ -13,6 +13,7 @@ import { SessionPool } from "./pool.js";
 import { HandoffController, type JobDriver } from "./handoff.js";
 import { Notifier } from "./notifier.js";
 import { loadProfiles } from "./profiles.js";
+import { credentialNamespace } from "./credentials.js";
 
 export interface SteelSegmentOptions {
   sink: EventSink;
@@ -30,6 +31,8 @@ export interface SteelSegment {
   handoff: HandoffController;
   notifier: Notifier;
   acquireSession: (req: LeaseRequest) => Promise<SessionHandle>;
+  /** C11: release sessions this app left live before a crash. Call once at startup. */
+  reconcile: () => Promise<string[]>;
   onWall: (wall: WallDetected, handle: SessionHandle) => ReturnType<HandoffController["onWall"]>;
   resume: (jobId: string, generation: number) => ReturnType<HandoffController["resume"]>;
 }
@@ -44,18 +47,31 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
     apiKey,
     proxyUrl: opts.proxyUrl ?? (process.env.PERISCOPE_PROXY_URL || undefined),
     solveCaptcha: opts.solveCaptcha ?? process.env.STEEL_CAPTCHA === "1",
+    // C8: inject stored credentials for an account when a profile record names a competitor for it
+    credentialNamespaceFor: (accountRef) => {
+      const rec = loadProfiles().find((p) => p.accountRef === accountRef);
+      return rec ? credentialNamespace(rec.competitor, rec.accountRef) : undefined;
+    },
   });
   const pool = new SessionPool(adapter, {
     homeCountryOf: async (profileId) => loadProfiles().find((p) => p.profileId === profileId)?.homeCountry ?? null,
-    isProfileReady: async (profileId) => loadProfiles().find((p) => p.profileId === profileId)?.ready ?? true,
+    // C6: a locally recorded profile must be READY on Steel before reuse; unknown ids are asked live
+    isProfileReady: async (profileId) => {
+      const rec = loadProfiles().find((p) => p.profileId === profileId);
+      if (rec?.ready) return true;
+      return adapter.isProfileReady(profileId);
+    },
+    onDeadline: async (sessionId, lastCheckpoint) => {
+      await opts.sink.write({ type: "job_state", data: { jobId: `session:${sessionId}`, state: "finalizing", reason: `deadline reached; checkpoint ${lastCheckpoint ? "saved" : "absent"}` } });
+    },
   });
   const notifier = new Notifier({ webhookUrl: opts.webhookUrl ?? (process.env.PERISCOPE_WEBHOOK_URL || undefined) });
   const handoff = new HandoffController(opts.driver ?? noopDriver, opts.sink, {
     notify: (evt, wall) => notifier.notify(evt, wall),
     captchaStatus: (sessionId) => adapter.captchaStatus(sessionId) as Promise<never>,
-    signedInIndicator: async (jobId) => {
-      void jobId; // TODO: look up the competitor's signed-in indicator from the profile record for this job
-      return null;
+    signedInIndicator: async (handle) => {
+      const rec = handle.profileId ? loadProfiles().find((p) => p.profileId === handle.profileId) : undefined;
+      return rec?.signedInIndicator ?? null;
     },
   });
   return {
@@ -65,6 +81,7 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
     handoff,
     notifier,
     acquireSession: (req) => pool.lease(req),
+    reconcile: () => pool.reconcile(),
     onWall: (wall, handle) => handoff.onWall(wall, handle),
     resume: async (jobId, generation) => {
       const r = await handoff.resume(jobId, generation);

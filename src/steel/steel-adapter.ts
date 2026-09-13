@@ -1,9 +1,9 @@
 // Owner: Fahad. Layer 1. The only file that talks to the Steel SDK directly.
-// Spec: docs/periscope-final-architecture.md, section 7.1. Tests: C1, C3, C4, C8, C19, C22.
+// Spec: docs/periscope-final-architecture.md, section 7.1. Tests: C1, C3, C4, C5, C8, C11, C19, C22.
 //
-// Verified live on Sept 13: sessions.create accepts timeout, solveCaptcha, profileId, persistProfile,
-// deviceConfig.device, useProxy.geolocation. CAPTCHA solving and managed proxies need a $10 paid balance
-// on the Launch plan (403 otherwise). Verify any new option against docs.steel.dev before relying on it.
+// Verified against steel-sdk 0.18.0 types and live on Sept 13: sessions.create accepts timeout, solveCaptcha,
+// profileId, persistProfile, deviceConfig.device, useProxy.geolocation, namespace, credentials.
+// CAPTCHA solving and managed proxies need a $10 paid balance on the Launch plan (403 otherwise).
 
 import Steel from "steel-sdk";
 import { chromium } from "playwright-core";
@@ -16,8 +16,15 @@ export interface SteelAdapterOptions {
   apiKey: string;
   proxyUrl?: string;          // bring-your-own proxy when managed proxies are not unlocked
   solveCaptcha?: boolean;     // Steel's solver needs a $10 paid balance on Launch; default off. Set STEEL_CAPTCHA=1 to enable
+  /** Credentials namespace to inject for a lease's accountRef; return undefined for no injection. */
+  credentialNamespaceFor?: (accountRef: string) => string | undefined;
   onCheckpoint?: (sessionId: string, state: unknown) => Promise<void>;
 }
+
+export type ProfileStatus = "UPLOADING" | "READY" | "FAILED" | "UNKNOWN";
+
+export interface TraceEvent { type: string; timestamp: string; endTimestamp?: string; page?: { url?: string }; [k: string]: unknown }
+export interface TraceExport { sessionId: string; events: TraceEvent[]; total: number; hasMore: boolean; complete: boolean; fetchedAt: string }
 
 export class SteelAdapter {
   private readonly steel: Steel;
@@ -42,7 +49,12 @@ export class SteelAdapter {
         ? { url: this.opts.proxyUrl }
         : { geolocation: { country: req.vantage.country, ...(req.vantage.region ? { state: req.vantage.region } : {}) } };
     }
-    // TODO(C8): attach credentials namespace when the lease carries an accountRef with stored credentials.
+    // C8: credential injection. Steel types the password itself; the model never sees it.
+    const ns = req.accountRef ? this.opts.credentialNamespaceFor?.(req.accountRef) : undefined;
+    if (ns) {
+      createOpts.namespace = ns;
+      createOpts.credentials = { autoSubmit: false, blurFields: true, exactOrigin: true };
+    }
 
     const session = await this.steel.sessions.create(createOpts as never);
     const query = new URLSearchParams({ apiKey: this.opts.apiKey, sessionId: session.id });
@@ -61,7 +73,8 @@ export class SteelAdapter {
       viewerUrl: (session as { sessionViewerUrl?: string }).sessionViewerUrl ?? "",
       cdpUrl,
       vantage: req.vantage,
-      profileId: req.profileId,
+      // C5: Steel assigns the profile id at create time when persistProfile is set; it becomes READY after release.
+      profileId: (session as { profileId?: string }).profileId ?? req.profileId,
       page,
       deadlineAt,
       async checkpoint(state) {
@@ -74,6 +87,54 @@ export class SteelAdapter {
     };
   }
 
+  /* ---------------- profiles (C5, C6) ---------------- */
+
+  async profileStatus(profileId: string): Promise<ProfileStatus> {
+    try {
+      const p = await this.steel.profiles.get(profileId);
+      return ((p as { status?: ProfileStatus }).status ?? "UNKNOWN");
+    } catch {
+      return "UNKNOWN";
+    }
+  }
+
+  async isProfileReady(profileId: string): Promise<boolean> {
+    return (await this.profileStatus(profileId)) === "READY";
+  }
+
+  /* ---------------- sessions (C11) ---------------- */
+
+  /** Ids of sessions currently live on the account. Used only to reconcile the ones this app owns. */
+  async liveSessionIds(): Promise<string[]> {
+    const ids: string[] = [];
+    for await (const s of this.steel.sessions.list({ status: "live" })) ids.push(s.id);
+    return ids;
+  }
+
+  async releaseSession(sessionId: string): Promise<void> {
+    await this.steel.sessions.release(sessionId);
+  }
+
+  /* ---------------- credentials (C8) ---------------- */
+
+  /** Store a credential through Steel. The value is passed straight to Steel and never logged or kept. */
+  async storeCredential(input: { namespace: string; origin: string; username: string; password: string; totpSecret?: string; label?: string }): Promise<void> {
+    const value: Record<string, string> = { username: input.username, password: input.password };
+    if (input.totpSecret) value.totpSecret = input.totpSecret;
+    await this.steel.credentials.create({ origin: input.origin, namespace: input.namespace, label: input.label, value });
+  }
+
+  async listCredentials(namespace?: string): Promise<Array<{ origin?: string; namespace?: string; label?: string }>> {
+    const r = (await this.steel.credentials.list(namespace ? { namespace } : {})) as unknown as { credentials?: Array<{ origin?: string; namespace?: string; label?: string }> } | Array<{ origin?: string }>;
+    return Array.isArray(r) ? r : (r.credentials ?? []);
+  }
+
+  async deleteCredential(origin: string, namespace?: string): Promise<void> {
+    await this.steel.credentials.delete({ origin, namespace });
+  }
+
+  /* ---------------- CAPTCHA (C21, C22) ---------------- */
+
   /**
    * Steel's CAPTCHA solver status for a session. Polled; Steel sends no events.
    * Live shape (Sept 13): an array of page states [{ pageId, url, isSolvingCaptcha, tasks: [{ type, status, ... }] }];
@@ -81,7 +142,7 @@ export class SteelAdapter {
    * navigate with waitUntil "load" before expecting tasks.
    */
   async captchaStatus(sessionId: string): Promise<{ isSolvingCaptcha: boolean; tasks: Array<{ type?: string; status: string }> }> {
-    const raw = await (this.steel.sessions as unknown as { captchas: { status(id: string): Promise<unknown> } }).captchas.status(sessionId);
+    const raw = (await this.steel.sessions.captchas.status(sessionId)) as unknown;
     type PageState = { isSolvingCaptcha?: boolean; tasks?: Array<{ type?: string; status: string }> };
     const pages: PageState[] = Array.isArray(raw)
       ? (raw as PageState[])
@@ -94,24 +155,43 @@ export class SteelAdapter {
 
   /** Ask Steel to (re)try solving every CAPTCHA it has detected on the session. */
   async triggerCaptchaSolve(sessionId: string): Promise<unknown> {
-    return (this.steel.sessions as unknown as { captchas: { solve(id: string, body?: unknown): Promise<unknown> } }).captchas.solve(sessionId, {});
+    return this.steel.sessions.captchas.solve(sessionId, {});
   }
 
-  /** Agent trace export for a session; used as evidence. */
-  async exportTrace(sessionId: string): Promise<unknown> {
-    // TODO(C19): GET /v1/sessions/:id/agent-traces with time filters and hasMore paging; mark incomplete coverage explicitly.
-    void sessionId;
-    throw new Error("not implemented");
+  /* ---------------- evidence: traces and files (C19) ---------------- */
+
+  /** Agent trace export. Raw REST, no SDK method. Incomplete coverage is marked, never hidden. */
+  async exportTrace(sessionId: string, range?: { start?: string; end?: string }): Promise<TraceExport> {
+    const q = new URLSearchParams();
+    if (range?.start) q.set("startTime", range.start);
+    if (range?.end) q.set("endTime", range.end);
+    const url = `https://api.steel.dev/v1/sessions/${sessionId}/agent-traces${q.size ? "?" + q.toString() : ""}`;
+    const res = await fetch(url, { headers: { "steel-api-key": this.opts.apiKey } });
+    if (!res.ok) throw new Error(`agent-traces ${res.status}`);
+    const body = (await res.json()) as { events?: TraceEvent[]; total?: number; hasMore?: boolean };
+    const events = body.events ?? [];
+    return { sessionId, events, total: body.total ?? events.length, hasMore: Boolean(body.hasMore), complete: !body.hasMore, fetchedAt: new Date().toISOString() };
   }
 
   /** Files the browser saved during the session. */
-  async listFiles(sessionId: string): Promise<unknown[]> {
-    // TODO(C19): sessions.files.list(id) and download into the artifact directory with a hash.
-    void sessionId;
-    throw new Error("not implemented");
+  async listFiles(sessionId: string): Promise<Array<{ path: string; size?: number }>> {
+    const r = (await this.steel.sessions.files.list(sessionId)) as unknown as { files?: Array<{ path: string; size?: number }> } | Array<{ path: string; size?: number }>;
+    return Array.isArray(r) ? r : (r.files ?? []);
   }
 
-  /** The IP the session exits from, for vantage verification (C3). */
+  /** Download every session file as one zip (bytes). */
+  async downloadArchive(sessionId: string): Promise<Uint8Array> {
+    const res = await this.steel.sessions.files.downloadArchive(sessionId);
+    return new Uint8Array(await res.arrayBuffer());
+  }
+
+  async downloadFile(sessionId: string, path: string): Promise<Uint8Array> {
+    const res = await this.steel.sessions.files.download(sessionId, path);
+    return new Uint8Array(await res.arrayBuffer());
+  }
+
+  /* ---------------- vantage check (C3) ---------------- */
+
   static async detectedIp(handle: SessionHandle): Promise<{ ip: string; country?: string }> {
     await handle.page.goto("https://ipinfo.io/json", { waitUntil: "domcontentloaded" });
     const text = await handle.page.locator("body").innerText();

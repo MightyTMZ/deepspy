@@ -24,7 +24,8 @@ export interface JobDriver {
 export interface HandoffOptions {
   humanTimeoutMs?: number;      // default 10 minutes
   inFlightTimeoutMs?: number;   // default 20 seconds
-  signedInIndicator?: (jobId: string) => Promise<string | null>;
+  /** Text that proves the account is signed in; resolved from the session's profile. */
+  signedInIndicator?: (handle: SessionHandle) => Promise<string | null>;
   notify?: (evt: HandoffEvent, wall: WallDetected) => Promise<void>;
   /** Steel solver status for a session. When set, CAPTCHA walls try Steel first and only escalate on failure. */
   captchaStatus?: (sessionId: string) => Promise<CaptchaStatus>;
@@ -75,7 +76,7 @@ export class HandoffController {
       if (still.wall === "payment") return { ok: false, reason: "payment field still visible" };
     }
     if (p.wall.wall === "login" || p.wall.wall === "2fa" || p.wall.wall === "email_code") {
-      const indicator = this.opts.signedInIndicator ? await this.opts.signedInIndicator(jobId) : null;
+      const indicator = this.opts.signedInIndicator ? await this.opts.signedInIndicator(p.handle) : null;
       if (indicator) {
         const text = await p.handle.page.locator("body").innerText().catch(() => "");
         if (!text.includes(indicator)) return { ok: false, reason: "signed-in indicator not found after resume" };
