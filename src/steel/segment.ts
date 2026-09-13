@@ -35,6 +35,7 @@ export interface SteelSegment {
   reconcile: () => Promise<string[]>;
   onWall: (wall: WallDetected, handle: SessionHandle) => ReturnType<HandoffController["onWall"]>;
   resume: (jobId: string, generation: number) => ReturnType<HandoffController["resume"]>;
+  waitForResolution: (jobId: string) => Promise<"resumed" | "abandoned">;
 }
 
 const noopDriver: JobDriver = {
@@ -83,6 +84,7 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
     acquireSession: (req) => pool.lease(req),
     reconcile: () => pool.reconcile(),
     onWall: (wall, handle) => handoff.onWall(wall, handle),
+    waitForResolution: (jobId) => handoff.waitForResolution(jobId),
     resume: async (jobId, generation) => {
       const r = await handoff.resume(jobId, generation);
       if (r.ok) notifier.stop(jobId);

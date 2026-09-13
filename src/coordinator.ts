@@ -5,6 +5,8 @@ import type {
   EventSink,
   JobState,
   Vantage,
+  WallDetected,
+  HandoffEvent,
 } from "@periscope/contracts";
 import { Meter, BudgetExceededError } from "./meter.js";
 import { Policy } from "./policy.js";
@@ -39,6 +41,13 @@ export interface CoordinatorConfig {
   sink: EventSink;
   acquireSession: (req: LeaseRequest) => Promise<SessionHandle>;
   steel: Steel;
+  /**
+   * Segment C (Fahad): human-in-the-loop hooks. When present, a wall raised by the walker goes to onWall,
+   * the session is kept alive until the human resumes or abandons, and the walk continues afterwards.
+   * Without them the old behaviour applies: the job is marked awaiting_human and the session is released.
+   */
+  onWall?: (wall: WallDetected, handle: SessionHandle) => Promise<HandoffEvent | { jobId: string; state: "solved_by_steel" }>;
+  waitForResolution?: (jobId: string) => Promise<"resumed" | "abandoned">;
 }
 
 const MAX_CONCURRENT = 10;
@@ -320,25 +329,48 @@ export class Coordinator {
       const { stagehand, page } = await createStagehand(handle);
 
       try {
-        const result = await walk({
-          runId: this.config.runId,
-          jobId: job.id,
-          competitor: job.competitor,
-          startUrl: job.urls[0],
-          stagehand,
-          page,
-          handle,
-          meter: this.meter,
-          policy: this.policy,
-          sink: this.config.sink,
-        });
+        // Segment C integration: a wall pauses the walk, a human (or Steel's CAPTCHA solver) clears it in the SAME
+        // session, and the walk resumes. Bounded so a wall that keeps reappearing cannot loop forever.
+        let startUrl = job.urls[0];
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const result = await walk({
+            runId: this.config.runId,
+            jobId: job.id,
+            competitor: job.competitor,
+            startUrl,
+            stagehand,
+            page,
+            handle,
+            meter: this.meter,
+            policy: this.policy,
+            sink: this.config.sink,
+          });
 
-        if (result.wallDetected) {
-          job.state = "awaiting_human";
-          await this.emitJobState(job);
-        } else if (result.stoppedReason === "budget") {
-          job.state = "partial";
-          job.reason = "Budget exceeded";
+          if (result.stoppedReason === "budget") {
+            job.state = "partial";
+            job.reason = "Budget exceeded";
+            break;
+          }
+          if (!result.wallDetected) break;
+
+          if (!this.config.onWall || !this.config.waitForResolution) {
+            job.state = "awaiting_human";
+            await this.emitJobState(job);
+            break;
+          }
+          const outcome = await this.config.onWall(result.wallDetected, handle);
+          if (outcome.state === "solved_by_steel") {
+            startUrl = page.url();
+            continue;
+          }
+          const resolution = await this.config.waitForResolution(job.id);
+          if (resolution === "abandoned") {
+            job.state = "partial";
+            job.reason = `wall ${result.wallDetected.wall} not resolved by a human`;
+            break;
+          }
+          job.state = "running";
+          startUrl = page.url();
         }
       } finally {
         await stagehand.close();

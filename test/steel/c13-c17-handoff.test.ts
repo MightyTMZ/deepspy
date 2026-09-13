@@ -76,3 +76,19 @@ describe("handoff controller", () => {
     expect(sink.ofType("handoff").at(-1)?.data.state).toBe("abandoned");
   });
 });
+
+describe("waitForResolution (coordinator integration)", () => {
+  it("resolves 'resumed' when the human resumes and 'abandoned' when the timer expires", async () => {
+    await page.goto(fixtureUrl("captcha-wall.html"));
+    const { d } = driver(); const sink = new MemorySink();
+    const hc = new HandoffController(d, sink, { humanTimeoutMs: 300 });
+    const evt = (await hc.onWall(wall("captcha"), fakeHandle(page))) as HandoffEvent;
+    const waiting = hc.waitForResolution("job1");
+    await hc.resume("job1", evt.generation);
+    expect(await waiting).toBe("resumed");
+    const evt2 = (await hc.onWall(wall("kyc"), fakeHandle(page))) as HandoffEvent;
+    void evt2;
+    expect(await hc.waitForResolution("job1")).toBe("abandoned");
+    expect(await hc.waitForResolution("nothing-pending")).toBe("resumed");
+  });
+});
