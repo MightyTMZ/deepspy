@@ -261,11 +261,17 @@ with left_col:
 
         st.markdown(f"##### Run <span class='mono'>{run_id}</span>", unsafe_allow_html=True)
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Status", status)
+        m1.metric("Status", status.upper()[:9])
         m2.metric("Observations", view["counts"]["observations"])
-        m3.metric("Spend", f"${run['spentUsd']:.2f} / ${run['capUsd']:.0f}")
-        missed_total = sum(c["missed"] for c in view["counters"] if isinstance(c["missed"], int))
-        m4.metric("Missed by fetch", missed_total if view["counters"] else "-")
+        m3.metric("Spend", f"${run['spentUsd']:.2f} of ${run['capUsd']:.0f}")
+        # one counter per page: the latest value wins (borders emits one per vantage for the same url)
+        latest = {}
+        for c in view["counters"]:
+            latest[c["url"]] = c["missed"]
+        if any(v == "uncertain" for v in latest.values()):
+            m4.metric("Missed by fetch", "uncertain")
+        else:
+            m4.metric("Missed by fetch", sum(v for v in latest.values() if isinstance(v, int)) if latest else "-")
 
         for job in view["jobs"]:
             mark = {"queued": "[ ]", "starting": "[.]", "running": "[~]", "awaiting_human": "[!]", "finalizing": "[~]", "completed": "[x]", "partial": "[/]", "failed": "[-]", "cancelled": "[-]"}.get(job["state"], "[ ]")

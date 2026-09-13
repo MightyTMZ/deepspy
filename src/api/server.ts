@@ -10,6 +10,7 @@ import { bordersGrid } from "../intel/borders-grid.js";
 import { coverage } from "../intel/coverage.js";
 import { diffRuns } from "../intel/diff.js";
 import { priceRows } from "../intel/prices.js";
+import { extractFeatures, summarizeDiff, type Complete } from "../intel/extract.js";
 import { loadProfiles, profileFor, saveProfile, waitUntilReady } from "../steel/profiles.js";
 import type { LaunchHandle, RunSpec } from "../integration/launch-run.js";
 
@@ -26,6 +27,7 @@ export interface ApiOptions {
   launch?: (spec: RunSpec) => LaunchHandle;
   port?: number;                 // default PERISCOPE_API_PORT or 4747; 0 picks a free port
   settleMs?: number;             // profile settle before release on finish; default 40 s
+  complete?: Complete;           // model behind /extract and diff summaries; absent means 503 / no summary
 }
 
 export interface Api {
@@ -69,7 +71,7 @@ export function createApi(opts: ApiOptions): Promise<Api> {
   const dollars = (micro: number) => Number((micro / 1e6).toFixed(6));
 
   /* ---------------- health and accounts ---------------- */
-  route("GET", "/health", (c) => json(c.res, 200, { ok: true, schemaVersion: storage.schemaVersion(), steel: Boolean(opts.segment?.acquireSession) }));
+  route("GET", "/health", (c) => json(c.res, 200, { ok: true, schemaVersion: storage.schemaVersion(), steel: Boolean(opts.segment?.acquireSession), model: Boolean(opts.complete) }));
 
   route("POST", "/account-setups", async (c) => {
     const b = await readBody(c.req);
@@ -229,17 +231,39 @@ export function createApi(opts: ApiOptions): Promise<Api> {
     json(c.res, 200, { ok: true, runId: c.params.id, grids: urls.map((u) => bordersGrid(u, obs)) });
   });
   route("GET", "/runs/:id/prices", (c) => { if (runOr404(c)) json(c.res, 200, { ok: true, runId: c.params.id, rows: priceRows(storage.getObservationsByRun(c.params.id)) }); });
-  route("GET", "/runs/:id/matrix", (c) => {
+  const matrixView = (runId: string) => {
+    const findings = storage.getFindingsByRun(runId, "feature");
+    const competitors = [...new Set(findings.map((f) => f.competitor))].sort();
+    const features = [...new Set(findings.map((f) => f.title ?? ""))].sort();
+    const cell = (feature: string, competitor: string) => { const f = findings.find((x) => x.title === feature && x.competitor === competitor); return f ? { id: f.id, status: f.status, value: f.value, evidence: f.observationIds } : null; };
+    return {
+      rows: findings.map((f) => ({ id: f.id, competitor: f.competitor, feature: f.title, status: f.status, value: f.value, evidence: f.observationIds })),
+      grid: { competitors, features, cells: features.map((feature) => ({ feature, byCompetitor: Object.fromEntries(competitors.map((co) => [co, cell(feature, co)])) })) },
+      note: findings.length ? undefined : opts.complete ? "no feature findings yet; POST /runs/:id/extract" : "no feature findings yet; extraction needs a model key",
+    };
+  };
+  route("GET", "/runs/:id/matrix", (c) => { if (runOr404(c)) json(c.res, 200, { ok: true, runId: c.params.id, ...matrixView(c.params.id) }); });
+  route("POST", "/runs/:id/extract", async (c) => {
     if (!runOr404(c)) return;
-    const findings = storage.getFindingsByRun(c.params.id, "feature");
-    json(c.res, 200, { ok: true, runId: c.params.id, rows: findings.map((f) => ({ id: f.id, competitor: f.competitor, feature: f.title, status: f.status, value: f.value, evidence: f.observationIds })), note: findings.length ? undefined : "no feature findings yet; extraction needs a model key" });
+    if (!opts.complete) return json(c.res, 503, { ok: false, reason: "no model key configured; set ANTHROPIC_API_KEY" });
+    const b = await readBody(c.req).catch(() => ({} as Record<string, unknown>));
+    const competitors = b.competitor ? [String(b.competitor)] : [...new Set(storage.getJobsByRun(c.params.id).map((j) => j.competitor).filter((x): x is string => Boolean(x)))];
+    const results = [];
+    for (const competitor of competitors) {
+      const r = await extractFeatures({ storage, runId: c.params.id, competitor, complete: opts.complete, category: b.category as string | undefined });
+      results.push({ competitor, rows: r.rows.length, rejected: r.rejected, findings: r.findings.length, tokensIn: r.tokensIn, tokensOut: r.tokensOut });
+    }
+    json(c.res, 200, { ok: true, runId: c.params.id, extracted: results, ...matrixView(c.params.id) });
   });
   route("GET", "/runs/:id/diff", (c) => {
     if (!runOr404(c)) return;
     const from = c.url.searchParams.get("from");
     if (!from) return json(c.res, 400, { ok: false, reason: "query ?from=<earlier runId> is required" });
     if (!storage.getRun(from)) return json(c.res, 404, { ok: false, reason: `run ${from} not found` });
-    json(c.res, 200, { ok: true, ...diffRuns(from, storage.getObservationsByRun(from), c.params.id, storage.getObservationsByRun(c.params.id)) });
+    const diff = diffRuns(from, storage.getObservationsByRun(from), c.params.id, storage.getObservationsByRun(c.params.id));
+    const wantSummary = c.url.searchParams.get("summary") === "1";
+    const summary = wantSummary && opts.complete ? (await summarizeDiff(diff, opts.complete)).bullets : wantSummary ? ["no model key configured; set ANTHROPIC_API_KEY for a written summary"] : undefined;
+    json(c.res, 200, { ok: true, ...diff, summary });
   });
 
   /* ---------------- evidence ---------------- */

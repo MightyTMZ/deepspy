@@ -1,0 +1,33 @@
+{
+  "category": "saas",
+  "features": [
+    "Free trial",
+    "Free plan",
+    "Monthly price",
+    "Annual price",
+    "Student or education discount",
+    "Family or team plan",
+    "Enterprise plan",
+    "Seat or user limit",
+    "Usage limit",
+    "Regional pricing",
+    "Single sign-on",
+    "Two-factor authentication",
+    "API access",
+    "Service level agreement",
+    "Terms of service",
+    "Acceptable use policy",
+    "Data processing agreement",
+    "Privacy policy",
+    "Data residency or region",
+    "Compliance certification",
+    "Audit log",
+    "Priority support",
+    "Offline or download access",
+    "Mobile app",
+    "Integrations",
+    "Cancellation policy",
+    "Refund policy",
+    "Bundled third-party service"
+  ]
+}
