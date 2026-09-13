@@ -19,6 +19,8 @@ from pathlib import Path
 import requests
 import streamlit as st
 
+from live_section import render_live_section
+
 API = os.environ.get("PERISCOPE_API_URL", "http://localhost:4747").rstrip("/")
 DATA_DIR = os.environ.get("PERISCOPE_DATA_DIR", str(Path(__file__).resolve().parent.parent / "data"))
 COMPETITORS_FILE = os.path.join(DATA_DIR, "competitors.json")
@@ -319,6 +321,16 @@ with left_col:
                         st.session_state.chat_messages = []
                         st.rerun()
             st.divider()
+
+    # ---------------- live: the agents at work (segment C) ----------------
+    if not st.session_state.active_runs:
+        def _add_helix(target: str) -> None:
+            comps = load_competitors()
+            if not any(c.get("name") == "helix-ledger" for c in comps):
+                comps.insert(0, {"name": "helix-ledger", "url": target, "pages": ["/pricing"]})
+                save_competitors(comps)
+        render_live_section(on_launch=_add_helix)
+        st.divider()
 
     # ---------------- run picker ----------------
     if not st.session_state.active_runs and all_runs:
