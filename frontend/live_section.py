@@ -1,15 +1,17 @@
 """
-Live section for the main page: every Steel browser the agents hold right now, embedded as Steel's live player, next
-to the stream of what the logic is doing, plus a one-click launcher for the Helix Ledger demo (the team's test SaaS):
-one instance parses the pricing page (toggles, dropdowns, hover, accordion, iframe, hidden API), six instances see it
-from three countries, and one instance walks in through the login wall and reads the dashboard.
+The centre of the main page: every Steel browser the agents hold right now, embedded as Steel's live player, the
+stream of what the logic does with what they see, an explicit "Steel usage" trace (each browser opened, the country
+it came through Steel's proxy from, device emulation, saved logins, CAPTCHA solver attempts, human handoffs), and
+under it the intelligence Periscope produced: coverage, countries, prices, feature matrix.
 
-API only (docs/api.md): GET /sessions, /handoffs, /runs/:id, /runs/:id/events?format=json, POST /runs, /jobs/:id/resume.
+API only (docs/api.md): GET /sessions, /handoffs, /runs, /runs/:id, /runs/:id/events?format=json, /runs/:id/coverage,
+/runs/:id/borders, /runs/:id/prices, /runs/:id/matrix; POST /runs, /jobs/:id/resume.
 """
 
 import os
 import time
 import uuid
+from datetime import datetime, timezone
 
 import requests
 import streamlit as st
@@ -18,18 +20,26 @@ import streamlit.components.v1 as components
 API = os.environ.get("PERISCOPE_API_URL", "http://localhost:4747").rstrip("/")
 TARGET = os.environ.get("PERISCOPE_TARGET_URL", "").rstrip("/")  # public url of Helix Ledger; Steel's browsers run in the cloud
 TARGET_EMAIL = os.environ.get("PERISCOPE_TARGET_EMAIL", "test@test.com")
+COUNTRY_NAMES = {"CA": "Canada", "US": "United States", "DE": "Germany", "GB": "United Kingdom", "FR": "France", "JP": "Japan", "AU": "Australia", "IN": "India", "BR": "Brazil"}
 
 CSS = """
 <style>
+.lv-wrap{margin-top:.2rem}
 .lv-cap{font-family:'SF Mono','Fira Code',monospace;font-size:.78rem;color:#9aa4b2;margin:.1rem 0 .25rem 0}
 .lv-tag{display:inline-block;padding:.05rem .45rem;border-radius:.4rem;background:#1f2a37;color:#dbe4ee;font-size:.7rem;margin-right:.3rem}
-.lv-tag.red{background:#4a1d1d;color:#ffb4b4}.lv-tag.green{background:#173a2a;color:#a8f0c6}.lv-tag.blue{background:#1d2a4a;color:#b4c8ff}
-.lv-log{font-family:'SF Mono','Fira Code',monospace;font-size:.76rem;line-height:1.4;white-space:pre-wrap;max-height:520px;overflow:auto}
-.lv-log .h{color:#ffb4b4}.lv-log .c{color:#a8f0c6}.lv-log .w{color:#ffd58a}.lv-log .d{color:#9aa4b2}.lv-log .b{color:#b4c8ff}
+.lv-tag.red{background:#4a1d1d;color:#ffb4b4}.lv-tag.green{background:#173a2a;color:#a8f0c6}.lv-tag.blue{background:#1d2a4a;color:#b4c8ff}.lv-tag.steel{background:#2b2140;color:#d9c8ff}
+.lv-log{font-family:'SF Mono','Fira Code',monospace;font-size:.76rem;line-height:1.45;white-space:pre-wrap;max-height:420px;overflow:auto;border:1px solid #2a3340;border-radius:6px;padding:.5rem .7rem}
+.lv-log .h{color:#ffb4b4}.lv-log .c{color:#a8f0c6}.lv-log .w{color:#ffd58a}.lv-log .d{color:#9aa4b2}.lv-log .b{color:#b4c8ff}.lv-log .s{color:#d9c8ff}
+.lv-chip{display:inline-block;padding:.35rem .7rem;border-radius:.5rem;background:#161c26;border:1px solid #2a3340;margin:0 .4rem .4rem 0;font-size:.85rem}
+.lv-chip b{font-size:1.15rem;color:#d9c8ff;margin-right:.25rem}
+.lv-empty{border:1px dashed #2a3340;border-radius:8px;padding:2.2rem 1rem;text-align:center;color:#6b7280}
 </style>
 """
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# API helpers
+# ---------------------------------------------------------------------------------------------------------------
 def _get(path, **params):
     try:
         r = requests.get(API + path, params=params, timeout=10)
@@ -64,7 +74,56 @@ def launch_helix_demo(target: str) -> list[str]:
     return launched
 
 
-def _event_line(e: dict) -> str | None:
+# ---------------------------------------------------------------------------------------------------------------
+# Steel usage trace: synthesised from the sessions the API reports, kept across refreshes in session state
+# ---------------------------------------------------------------------------------------------------------------
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%H:%M:%S")
+
+
+def _country(v: dict) -> str:
+    c = v.get("country")
+    return f"{COUNTRY_NAMES.get(c, c)} through a Steel proxy" if c else "Steel's home region"
+
+
+def _steel_trace(sessions: list[dict], handoffs: list[dict]) -> tuple[list[str], dict]:
+    seen: dict = st.session_state.setdefault("lv_seen", {})
+    trace: list[str] = st.session_state.setdefault("lv_trace", [])
+    stats: dict = st.session_state.setdefault("lv_stats", {"browsers": 0, "countries": set(), "devices": set(), "proxies": 0, "logins": 0, "walls": 0, "captcha": 0})
+    live_ids = {s["sessionId"] for s in sessions}
+    for s in sessions:
+        sid = s["sessionId"]
+        if sid in seen:
+            continue
+        v = s.get("vantage") or {}
+        seen[sid] = {"t": time.time(), "purpose": s.get("purpose"), "competitor": s.get("competitor")}
+        stats["browsers"] += 1
+        stats["devices"].add(v.get("device", "desktop"))
+        if v.get("country"):
+            stats["countries"].add(v["country"])
+            stats["proxies"] += 1
+        parts = [f"Steel opened browser #{stats['browsers']} for {s.get('competitor') or 'a target'}", f"purpose {s.get('purpose') or 'session'}", _country(v)]
+        parts.append("mobile device emulation" if v.get("device") == "mobile" else "desktop")
+        if s.get("profileId"):
+            parts.append("saved login profile restored")
+            stats["logins"] += 1
+        if s.get("accountRef"):
+            parts.append("credentials injected by Steel, never seen by the model")
+        trace.append(f"<span class='s'>{_now()} {' · '.join(parts)} · session {sid[:8]}</span>")
+    for sid, info in list(seen.items()):
+        if sid not in live_ids and not info.get("closed"):
+            info["closed"] = True
+            trace.append(f"<span class='d'>{_now()} Steel released browser {sid[:8]} after {int(time.time() - info['t'])} s ({info.get('purpose')})</span>")
+    for h in handoffs:
+        key = f"{h['jobId']}:{h['generation']}"
+        if key not in seen:
+            seen[key] = {"t": time.time(), "closed": True}
+            stats["walls"] += 1
+            trace.append(f"<span class='h'>{_now()} {h['wall'].upper()} wall: the session is kept alive, a human takes over in Steel's live view, the walk resumes in the same browser</span>")
+    return trace, stats
+
+
+def _event_line(e: dict, stats: dict) -> str | None:
     ev = e.get("event", {})
     t = ev.get("type")
     d = ev.get("data", {})
@@ -73,7 +132,12 @@ def _event_line(e: dict) -> str | None:
         reason = d.get("reason") or ""
         state = d.get("state")
         if "captcha" in reason:
-            return f"<span class='w'>{ts} Steel CAPTCHA solver: {reason.split(':')[-1]} (job {d.get('jobId', '')[:8]})</span>"
+            outcome = reason.split(":")[-1]
+            key = f"captcha:{d.get('jobId')}:{outcome}"
+            if key not in st.session_state.get("lv_seen", {}):
+                st.session_state.setdefault("lv_seen", {})[key] = {"closed": True}
+                stats["captcha"] += 1
+            return f"<span class='w'>{ts} Steel CAPTCHA solver ran first: {outcome} (job {d.get('jobId', '')[:8]})</span>"
         cls = "w" if state in ("awaiting_human", "partial", "failed") else "d"
         return f"<span class='{cls}'>{ts} job {d.get('jobId', '')[:8]} {state}{' (' + reason + ')' if reason else ''}</span>"
     if t == "handoff":
@@ -83,29 +147,92 @@ def _event_line(e: dict) -> str | None:
     if t == "observation" and d.get("layer") in ("hidden", "interior", "borders"):
         rb = d.get("revealedBy") or {}
         via = rb.get("label") or (rb.get("action") if rb.get("action") not in (None, "none") else "") or ""
-        vc = (d.get("vantage") or {}).get("country") or ""
+        v = d.get("vantage") or {}
+        where = f" from {COUNTRY_NAMES.get(v.get('country'), v.get('country'))}{' on mobile' if v.get('device') == 'mobile' else ''}" if v.get("country") else ""
         flag = "<span class='c'> ✗ fetch never saw this</span>" if d.get("missedByFetch") else ""
-        layer = {"hidden": "b", "interior": "green", "borders": "d"}.get(d.get("layer"), "d")
-        return f"<span class='d'>{ts}</span> <span class='{layer}'>[{d.get('layer')}{' ' + vc if vc else ''}]</span> {(via + ' → ') if via else ''}{d.get('text', '')[:120]}{flag}"
+        layer = {"hidden": "b", "interior": "c", "borders": "d"}.get(d.get("layer"), "d")
+        return f"<span class='d'>{ts}</span> <span class='{layer}'>[{d.get('layer')}{where}]</span> {(via + ' → ') if via else ''}{d.get('text', '')[:120]}{flag}"
     if t == "run_done":
         return f"<span class='c'>{ts} RUN DONE</span>"
     return None
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Intelligence under the live view
+# ---------------------------------------------------------------------------------------------------------------
+def _intelligence(run_ids: list[str]) -> None:
+    st.markdown("##### What Periscope learned")
+    st.markdown('<span class="muted">Coverage, countries, prices and the feature matrix from the runs above. Every row links back to the observation and the Steel session that produced it.</span>', unsafe_allow_html=True)
+    if not run_ids:
+        st.markdown('<div class="lv-empty">Nothing yet. Launch the demo above.</div>', unsafe_allow_html=True)
+        return
+    tab_cov, tab_borders, tab_prices, tab_matrix = st.tabs(["Coverage", "Countries", "Prices", "Feature matrix"])
+    with tab_cov:
+        rows = []
+        for rid in run_ids:
+            cov = _get(f"/runs/{rid}/coverage")
+            for p in cov.get("pages", []):
+                top = ", ".join(f"{k} ({v})" for k, v in sorted((p.get("byAction") or {}).items(), key=lambda kv: -kv[1])[:4])
+                rows.append({"page": p["url"], "fetch saw": p["surface"], "revealed": p["hidden"], "missed by fetch": p["counter"], "documents": p["documents"], "vantages": len(p["vantages"]), "revealed by": top})
+        if rows:
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+        else:
+            st.markdown('<span class="muted">No pages yet.</span>', unsafe_allow_html=True)
+    with tab_borders:
+        shown = False
+        for rid in run_ids:
+            for g in _get(f"/runs/{rid}/borders").get("grids", []):
+                shown = True
+                st.markdown(f"<span class='mono'>{g['url']}</span> · differs by country: <strong>{'yes' if g['differsByCountry'] else 'no'}</strong> · differs by device: <strong>{'yes' if g['differsByDevice'] else 'no'}</strong>", unsafe_allow_html=True)
+                cols = st.columns(max(1, len(g.get("countries", []))))
+                for i, c in enumerate(g.get("countries", [])):
+                    with cols[i % len(cols)]:
+                        st.markdown(f"**{COUNTRY_NAMES.get(c['country'], c['country'])}** <span class='lv-tag steel'>via Steel proxy</span>", unsafe_allow_html=True)
+                        for line in c.get("prices", [])[:6]:
+                            st.markdown(f"<div class='hidden-line'>{line[:120]}</div>", unsafe_allow_html=True)
+                        for line in [l for l in c.get("uniqueToCountry", []) if l not in c.get("prices", [])][:4]:
+                            st.markdown(f"<div class='surface-line'>{line[:120]}</div>", unsafe_allow_html=True)
+        if not shown:
+            st.markdown('<span class="muted">No border run yet.</span>', unsafe_allow_html=True)
+    with tab_prices:
+        rows = []
+        for rid in run_ids:
+            for r in _get(f"/runs/{rid}/prices").get("rows", []):
+                rows.append({"country": COUNTRY_NAMES.get(r["country"], r["country"] or "home"), "device": r["device"], "amount": r["amount"], "currency": r["currency"], "period": r["period"], "text": r["text"][:90], "layer": r["layer"]})
+        if rows:
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+        else:
+            st.markdown('<span class="muted">No price lines yet.</span>', unsafe_allow_html=True)
+    with tab_matrix:
+        rows = []
+        note = None
+        for rid in run_ids:
+            m = _get(f"/runs/{rid}/matrix")
+            note = note or m.get("note")
+            for r in m.get("rows", []):
+                rows.append({"competitor": r["competitor"], "feature": r["feature"], "status": r["status"], "value": (r.get("value") or "")[:100], "evidence": len(r.get("evidence") or [])})
+        if rows:
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+        else:
+            st.markdown(f'<span class="muted">{note or "The matrix fills a minute after a run completes (one Claude call per competitor)."}</span>', unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Section
+# ---------------------------------------------------------------------------------------------------------------
 def render_live_section(followed_runs: list[str] | None = None, on_launch=None) -> None:
     st.markdown(CSS, unsafe_allow_html=True)
-    st.markdown("##### Live: the agents at work on Steel")
-    st.markdown('<span class="muted">Every frame is a real Steel browser, streamed as it runs. Left: the browsers. Right: what the logic does with what they see.</span>', unsafe_allow_html=True)
+    st.markdown("### Live: the agents at work on Steel")
+    st.markdown('<span class="muted">Every frame is a real Steel browser, streamed as it runs. One instance parses the pricing page, six see it from three countries through Steel proxies, one walks in past the login. The trace on the right names every Steel feature as it is used.</span>', unsafe_allow_html=True)
 
     health = _get("/health")
     if not health.get("steel"):
         st.info("The API has no Steel key, so nothing can be launched from here.")
         return
 
-    # ---- demo launcher -------------------------------------------------------------------------------------------
     c1, c2 = st.columns([2, 3])
     with c1:
-        target = st.text_input("Helix Ledger url (public, reachable from Steel's cloud)", value=TARGET, placeholder="https://helix-ledger.example.com", key="lv_target")
+        target = st.text_input("Target (the team's test SaaS, Helix Ledger)", value=TARGET, placeholder="https://<words>.trycloudflare.com", key="lv_target")
     with c2:
         st.markdown("<div style='height:1.7rem'></div>", unsafe_allow_html=True)
         disabled = not target.startswith("http") or "localhost" in target or "127.0.0.1" in target
@@ -118,51 +245,62 @@ def render_live_section(followed_runs: list[str] | None = None, on_launch=None) 
                 st.toast(f"Launched {len(ids)} runs")
         if disabled and target:
             st.caption("Steel's browsers run in the cloud, so the target must be a public url, not localhost.")
-    st.caption(f"Login beat: the walker stops at the sign-in wall; a teammate types {TARGET_EMAIL} and the password inside the live frame, then presses resume. Periscope never sees the password.")
+    st.caption(f"Login beat: the walker stops at the sign-in wall and the card turns red; a teammate types {TARGET_EMAIL} and the password inside the live frame, then presses resume. Periscope never sees the password.")
 
     followed = list(followed_runs or []) or list(st.session_state.get("lv_runs", []))
+    if not followed:
+        # default to the latest Helix runs so the page is never empty
+        followed = [r["id"] for r in _get("/runs", limit=30).get("runs", []) if "helix-ledger" in (r.get("competitors") or [])][:3]
 
     @st.fragment(run_every="2s")
     def live_body():
         sessions = _get("/sessions").get("sessions", [])
         handoffs = _get("/handoffs").get("handoffs", [])
-        left, right = st.columns([3, 2], gap="medium")
+        trace, stats = _steel_trace(sessions, handoffs)
 
+        chips = [
+            f"<span class='lv-chip'><b>{stats['browsers']}</b> Steel browsers opened</span>",
+            f"<span class='lv-chip'><b>{len(stats['countries'])}</b> countries via Steel proxies {'(' + ', '.join(sorted(stats['countries'])) + ')' if stats['countries'] else ''}</span>",
+            f"<span class='lv-chip'><b>{len(stats['devices'])}</b> device profiles</span>",
+            f"<span class='lv-chip'><b>{stats['captcha']}</b> CAPTCHA solver runs</span>",
+            f"<span class='lv-chip'><b>{stats['walls']}</b> human handoffs in the live view</span>",
+            f"<span class='lv-chip'><b>{len(sessions)}</b> live now</span>",
+        ]
+        st.markdown("".join(chips), unsafe_allow_html=True)
+
+        left, right = st.columns([3, 2], gap="medium")
         with left:
-            n = len(sessions)
-            st.markdown(f"**{n} live browser{'s' if n != 1 else ''}**")
             if not sessions:
-                st.markdown('<span class="muted">No Steel session open right now. Launch a run; browsers appear within seconds.</span>', unsafe_allow_html=True)
-            cols = st.columns(2) if n > 1 else [st.container()]
+                st.markdown('<div class="lv-empty">No Steel browser open right now. Press the red button; browsers appear here within seconds.</div>', unsafe_allow_html=True)
+            n = len(sessions)
+            ncols = 3 if n >= 5 else 2 if n > 1 else 1
+            cols = st.columns(ncols) if n > 1 else [st.container()]
             for i, s in enumerate(sessions):
                 with cols[i % len(cols)]:
                     v = s.get("vantage") or {}
-                    purpose = s.get("purpose") or "session"
-                    tags = [f"<span class='lv-tag blue'>{purpose}</span>", f"<span class='lv-tag'>{v.get('country') or 'home'} · {v.get('device', 'desktop')}</span>"]
+                    tags = [f"<span class='lv-tag blue'>{s.get('purpose') or 'session'}</span>", f"<span class='lv-tag steel'>{COUNTRY_NAMES.get(v.get('country'), v.get('country')) + ' · proxy' if v.get('country') else 'home region'}</span>", f"<span class='lv-tag'>{v.get('device', 'desktop')}</span>"]
                     if s.get("profileId") or s.get("accountRef"):
                         tags.append("<span class='lv-tag green'>signed in</span>")
                     if s.get("pendingWall"):
                         tags.append(f"<span class='lv-tag red'>wall: {s['pendingWall']} · needs a human</span>")
-                    st.markdown(f"<div class='lv-cap'><strong>{s.get('competitor') or ''}</strong> {''.join(tags)}<br>{(s.get('currentUrl') or '')[:90]}</div>", unsafe_allow_html=True)
-                    components.iframe(s["playerUrl"], height=330)
-                    st.markdown(f"<div class='lv-cap'>session {s['sessionId'][:8]} · <a href='{s['viewerUrl']}' target='_blank'>open in Steel</a></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='lv-cap'><strong>{s.get('competitor') or ''}</strong> {''.join(tags)}<br>{(s.get('currentUrl') or '')[:80]}</div>", unsafe_allow_html=True)
+                    components.iframe(s["playerUrl"], height=300 if ncols == 3 else 340)
+                    st.markdown(f"<div class='lv-cap'>Steel session {s['sessionId'][:8]} · <a href='{s['viewerUrl']}' target='_blank'>open in Steel</a></div>", unsafe_allow_html=True)
 
         with right:
-            st.markdown("**What the logic is doing**")
             for h in handoffs:
                 st.error(f"{h['wall']} wall on job {h['jobId'][:8]}: clear it in the live frame, then resume.")
                 if st.button("I cleared it, resume", key=f"lv_resume_{h['jobId']}"):
                     code, res = _post(f"/jobs/{h['jobId']}/resume", {"generation": h["generation"]})
                     st.toast("Resumed" if res.get("ok") else res.get("reason", f"HTTP {code}"))
-            run_ids = followed or [s.get("runId") for s in sessions if s.get("runId")]
-            run_ids = list(dict.fromkeys(r for r in run_ids if r))
-            if not run_ids:
-                st.markdown('<span class="muted">Launch the demo or a run to follow its logic here.</span>', unsafe_allow_html=True)
-                return
+            st.markdown("**Steel usage trace**")
+            st.markdown("<div class='lv-log'>" + ("<br>".join(trace[-40:][::-1]) or "<span class='d'>Waiting for the first browser.</span>") + "</div>", unsafe_allow_html=True)
+
+            st.markdown("**What the logic is doing**")
+            lines = []
             missed = 0
             observations = 0
-            lines = []
-            for rid in run_ids:
+            for rid in followed:
                 run = _get(f"/runs/{rid}")
                 by_url = {}
                 for c in run.get("counters") or []:
@@ -171,14 +309,22 @@ def render_live_section(followed_runs: list[str] | None = None, on_launch=None) 
                 missed += sum(by_url.values())
                 observations += (run.get("counts") or {}).get("observations", 0)
                 for e in _get(f"/runs/{rid}/events", format="json").get("events", [])[-300:]:
-                    line = _event_line(e)
+                    line = _event_line(e, stats)
                     if line:
                         lines.append((e.get("createdAt", ""), f"<span class='d'>{rid.split('-')[1] if '-' in rid else rid}</span> {line}"))
             m1, m2, m3 = st.columns(3)
             m1.metric("Missed by fetch", missed)
             m2.metric("Observations", observations)
-            m3.metric("Runs", len(run_ids))
+            m3.metric("Runs followed", len(followed))
             lines.sort(key=lambda x: x[0])
-            st.markdown("<div class='lv-log'>" + "<br>".join(l for _, l in lines[-150:][::-1]) + "</div>", unsafe_allow_html=True)
+            st.markdown("<div class='lv-log'>" + ("<br>".join(l for _, l in lines[-120:][::-1]) or "<span class='d'>Launch the demo to follow its logic here.</span>") + "</div>", unsafe_allow_html=True)
 
     live_body()
+
+    st.divider()
+
+    @st.fragment(run_every="10s")
+    def intel_body():
+        _intelligence(followed)
+
+    intel_body()

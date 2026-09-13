@@ -171,6 +171,18 @@ if not health.get("steel"):
     st.warning("API is running without STEEL_API_KEY: results from earlier runs are browsable, new runs cannot be launched.")
 
 st.divider()
+
+
+def _add_helix(target: str) -> None:
+    comps = load_competitors()
+    if not any(c.get("name") == "helix-ledger" for c in comps):
+        comps.insert(0, {"name": "helix-ledger", "url": target, "pages": ["/pricing"]})
+        save_competitors(comps)
+
+
+# Segment C: the live view is the centre of the page, full width, above the market and the run views.
+render_live_section(on_launch=_add_helix)
+st.divider()
 left_col, right_col = st.columns([3, 2], gap="large")
 
 # ---------------------------------------------------------------------------
@@ -321,16 +333,6 @@ with left_col:
                         st.session_state.chat_messages = []
                         st.rerun()
             st.divider()
-
-    # ---------------- live: the agents at work (segment C) ----------------
-    if True:  # always visible, also while a run is open
-        def _add_helix(target: str) -> None:
-            comps = load_competitors()
-            if not any(c.get("name") == "helix-ledger" for c in comps):
-                comps.insert(0, {"name": "helix-ledger", "url": target, "pages": ["/pricing"]})
-                save_competitors(comps)
-        render_live_section(on_launch=_add_helix)
-        st.divider()
 
     # ---------------- run picker ----------------
     if not st.session_state.active_runs and all_runs:
