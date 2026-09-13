@@ -12,6 +12,7 @@ import { SteelAdapter } from "./steel-adapter.js";
 import { SessionPool } from "./pool.js";
 import { HandoffController, type JobDriver } from "./handoff.js";
 import { Notifier } from "./notifier.js";
+import { ensureStagehandExtension } from "./stagehand-extension.js";
 import { loadProfiles } from "./profiles.js";
 import { credentialNamespace } from "./credentials.js";
 
@@ -46,6 +47,12 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
   const apiKey = opts.apiKey ?? process.env.STEEL_API_KEY ?? "";
   const adapter = new SteelAdapter({
     apiKey,
+    // Model-driven passes (reveal, walker) need Stagehand's extension inside the Steel session; setup and borders do not.
+    extensionIdsFor: async (req) => {
+      if (!process.env.ANTHROPIC_API_KEY || req.purpose === "setup" || req.purpose === "borders") return [];
+      const id = await ensureStagehandExtension(adapter.client);
+      return id ? [id] : [];
+    },
     proxyUrl: opts.proxyUrl ?? (process.env.PERISCOPE_PROXY_URL || undefined),
     solveCaptcha: opts.solveCaptcha ?? process.env.STEEL_CAPTCHA === "1",
     // C8: inject stored credentials for an account when a profile record names a competitor for it
