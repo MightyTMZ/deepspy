@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/jobs/run-saturday-borders/resume",
+    "body": {
+      "generation": 2
+    }
+  },
+  "status": 200,
+  "response": {
+    "ok": true
+  }
+}

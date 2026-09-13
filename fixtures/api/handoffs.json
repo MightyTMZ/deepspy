@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/handoffs"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "handoffs": [
+      {
+        "jobId": "run-saturday-borders",
+        "viewerUrl": "https://app.steel.dev/sessions/sess-2",
+        "wall": "captcha",
+        "generation": 2,
+        "state": "awaiting_human"
+      }
+    ]
+  }
+}

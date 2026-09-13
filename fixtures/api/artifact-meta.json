@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/artifacts/artifact-1?meta=1"
+  },
+  "status": 410,
+  "response": {
+    "ok": false,
+    "artifact": {
+      "id": "artifact-1",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "path": "data/walls/example.png",
+      "bytes": 1234,
+      "mediaType": "image/png",
+      "kind": "screenshot",
+      "runId": "run-saturday",
+      "createdAt": "2026-09-13T10:37:08.918Z"
+    }
+  }
+}

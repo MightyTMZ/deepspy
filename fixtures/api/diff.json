@@ -1,0 +1,61 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/diff?from=run-friday"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "fromRunId": "run-friday",
+    "toRunId": "run-saturday",
+    "added": [
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantage": "US/desktop",
+        "layer": "borders",
+        "kind": "text",
+        "text": "$12.99 / month after"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantage": "US/mobile",
+        "layer": "borders",
+        "kind": "text",
+        "text": "$12.99 / month after"
+      }
+    ],
+    "removed": [
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantage": "US/desktop",
+        "layer": "borders",
+        "kind": "text",
+        "text": "$11.99 / month after"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantage": "US/mobile",
+        "layer": "borders",
+        "kind": "text",
+        "text": "$11.99 / month after"
+      }
+    ],
+    "priceChanges": [
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantage": "US/desktop",
+        "layer": "borders",
+        "kind": "text",
+        "text": "$12.99 / month after"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantage": "US/mobile",
+        "layer": "borders",
+        "kind": "text",
+        "text": "$12.99 / month after"
+      }
+    ],
+    "unchanged": 16
+  }
+}

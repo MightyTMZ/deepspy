@@ -24,8 +24,9 @@ Demo commands, in order, are in `docs/demo-runbook.md`. Everything below ran liv
 | **Run diff and coverage** (`src/intel/diff.ts`, `src/intel/coverage.ts`) | Implemented | 4 unit tests, `scripts/diff-runs.ts` |
 | **Model-free walker** (`src/walker-deterministic.ts`): same-origin crawl behind the login, one interior observation per visible line per screen, blocked links (billing, log out, pay ...) observed but never visited, wall check after every navigation, checkpoint every 5 screens; the coordinator uses it when no model key is set | Implemented | fixture site test; live wall rehearsal below |
 | **Fetch benchmark stores its sightings** as visible text (was raw HTML, never written) | Fixed in Tom's `src/benchmark.ts` | 2 tests; Ornn run shows benchmark 26 |
+| **API, section 8.3** (`src/api`, branch `fahad/api`): account setups, runs with idempotency key and cancel, SSE events with `Last-Event-ID` reconnect, handoffs, takeover, resume, viewer, coverage, borders, prices, matrix, diff, findings, artifacts. Dependency-free `node:http`, read-only without a Steel key | Implemented | 16 tests (A14, A15, A16, A17), 17 fixture responses in `fixtures/api` (A18), live run launched through `POST /runs` |
 
-Test totals on the branch: 54 offline passed, 7 live passed (C1, C3, C4, C5, C8, C19, C22), 1 todo (C20 with a real human; the loop itself is rehearsed live below).
+Test totals across both branches: 71 offline passed, 7 live passed (C1, C3, C4, C5, C8, C19, C22), 1 todo (C20 with a real human; the loop itself is rehearsed live below).
 
 ## Live results that are the demo
 
@@ -36,6 +37,7 @@ Test totals on the branch: 54 offline passed, 7 live passed (C1, C3, C4, C5, C8,
 | Borders, Spotify premium, CA/US/DE, desktop and mobile | `live-borders-spotify-3` | CA **$13.99**, US **$12.99 with Hulu**, DE **12,99 €**; German cookie wall declined automatically; 6 sessions in parallel | 24 s |
 | Run to run diff, Spotify run 1 vs run 3 | `scripts/diff-runs.ts` | 715 unchanged, 18 added, 34 removed (scroll-position noise, no price change in 30 minutes) | instant |
 | **Model-free crawl of ornn.com** (no login, shows the walker on a real site) | `live-walk-ornn-2` | 11 screens, **328 interior lines** recorded, blocked links observed not visited; then the home page tripped the `kyc` rule (Ornn sells identity verification) and the job waited the full 10-minute timer before finishing `partial`. Rule tightened afterwards, see finding 11. Rerun `live-walk-ornn-3`: **17 screens, 471 interior lines, completed, no false wall** | 698 s, then 133 s |
+| **Run through the API**, `POST /runs` then the event stream | `api-live-ornn-1` | 202 with run id, idempotent replay returned the same id, 12 events streamed to `event: end`, coverage counter 6 | 17 s |
 | **Wall rehearsal (C20 without the human)**, walker started on github.com/login with a 150 s human timer | `live-wall-github-1` | wall classified, Steel solver tried first and timed out after 30 s, handoff `awaiting_human` with live view, `POST /jobs/:id/resume` returned ok and the walk resumed in the same session, wall again, timer expired, handoff `abandoned`, job `partial` with the reason. 13 events in SQLite | 223 s |
 
 Print any of them again with `npx tsx scripts/inspect-run.ts <runId>`, `npx tsx scripts/borders-grid.ts <runId>`, `npx tsx scripts/diff-runs.ts <fromRunId> <toRunId>`.
@@ -69,7 +71,7 @@ Print any of them again with `npx tsx scripts/inspect-run.ts <runId>`, `npx tsx 
 ## What is left, in order
 
 1. **C20 live handoff, together.** Walker on a page with a CAPTCHA Steel cannot solve (hCaptcha demo), notifier fires, solve in the live view, POST resume, walk continues. Everything exists; it needs a human on the live view.
-2. **Ayaan's API** replaces the minimal resume server and serves coverage, borders, diff from `src/intel`.
+2. **API is on branch `fahad/api`**, ready to merge: `npm run api`, contract in `docs/api.md`, fixtures in `fixtures/api/`. Ayaan owns it from here; the matrix route returns findings of kind `feature`, which his extraction should create. The frontend can start from the fixtures now.
 3. **Stagehand layer with a Claude key.** The deterministic pass already produces the demo numbers; the model adds judgement on pages the strategies do not cover and lets the walker operate buttons and menus instead of only links. Set `ANTHROPIC_API_KEY` and rerun the Ornn command in the runbook.
 4. **Trial accounts:** `setup-account` then `setup-credential` for each, then a walker run with `--profile` and `--account`.
 

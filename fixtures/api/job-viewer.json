@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/jobs/run-saturday-borders/viewer"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "jobId": "run-saturday-borders",
+    "state": "completed",
+    "viewerUrl": "https://app.steel.dev/sessions/sess-2",
+    "steelSessionId": null,
+    "pendingWall": "captcha"
+  }
+}

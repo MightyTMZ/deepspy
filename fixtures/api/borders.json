@@ -1,0 +1,113 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/borders"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "runId": "run-saturday",
+    "grids": [
+      {
+        "url": "https://www.spotify.com/premium/",
+        "vantages": [
+          {
+            "key": "CA/desktop",
+            "country": "CA",
+            "device": "desktop",
+            "total": 2,
+            "unique": [],
+            "prices": [
+              "$13.99 / month after. Cancel anytime."
+            ]
+          },
+          {
+            "key": "CA/mobile",
+            "country": "CA",
+            "device": "mobile",
+            "total": 1,
+            "unique": [],
+            "prices": [
+              "$13.99 / month after. Cancel anytime."
+            ]
+          },
+          {
+            "key": "DE/desktop",
+            "country": "DE",
+            "device": "desktop",
+            "total": 2,
+            "unique": [],
+            "prices": [
+              "Danach 12,99 €/Monat"
+            ]
+          },
+          {
+            "key": "DE/mobile",
+            "country": "DE",
+            "device": "mobile",
+            "total": 1,
+            "unique": [],
+            "prices": [
+              "Danach 12,99 €/Monat"
+            ]
+          },
+          {
+            "key": "US/desktop",
+            "country": "US",
+            "device": "desktop",
+            "total": 3,
+            "unique": [
+              "Spotify Premium Student offer currently includes access to Hulu"
+            ],
+            "prices": [
+              "$12.99 / month after"
+            ]
+          },
+          {
+            "key": "US/mobile",
+            "country": "US",
+            "device": "mobile",
+            "total": 1,
+            "unique": [],
+            "prices": [
+              "$12.99 / month after"
+            ]
+          }
+        ],
+        "countries": [
+          {
+            "country": "CA",
+            "uniqueToCountry": [
+              "$13.99 / month after. Cancel anytime."
+            ],
+            "prices": [
+              "$13.99 / month after. Cancel anytime."
+            ]
+          },
+          {
+            "country": "DE",
+            "uniqueToCountry": [
+              "Danach 12,99 €/Monat"
+            ],
+            "prices": [
+              "Danach 12,99 €/Monat"
+            ]
+          },
+          {
+            "country": "US",
+            "uniqueToCountry": [
+              "$12.99 / month after",
+              "Spotify Premium Student offer currently includes access to Hulu"
+            ],
+            "prices": [
+              "$12.99 / month after"
+            ]
+          }
+        ],
+        "shared": 0,
+        "differsByCountry": true,
+        "differsByDevice": false
+      }
+    ]
+  }
+}

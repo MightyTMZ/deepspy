@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/account-setups",
+    "body": {
+      "competitor": "ornn",
+      "url": "https://app.ornn.com/login",
+      "indicator": "Dashboard"
+    }
+  },
+  "status": 503,
+  "response": {
+    "ok": false,
+    "reason": "steel not configured; run setup-account from the CLI",
+    "setup": {
+      "id": "292f198c-eea6-4512-adfc-2aeb8c6cbd18",
+      "competitor": "ornn",
+      "url": "https://app.ornn.com/login",
+      "indicator": "Dashboard",
+      "accountRef": "trial1",
+      "country": "CA",
+      "state": "awaiting_login",
+      "createdAt": "2026-09-13T10:37:09.052Z"
+    }
+  }
+}
