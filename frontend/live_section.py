@@ -64,7 +64,7 @@ def launch_helix_demo(target: str) -> list[str]:
         {"competitor": "helix-ledger", "url": target, "pages": ["/pricing", "/regulatory", "/security"], "jobs": ["surface", "benchmark", "reveal"], "runId": f"helix-parse-{stamp}"},
         {"competitor": "helix-ledger", "url": target, "pages": ["/pricing"], "jobs": ["surface", "borders"], "countries": ["CA", "US", "DE"], "runId": f"helix-borders-{stamp}"},
         # accountRef trial1: Steel injects the credential stored in its vault for this account, the walker signs in by itself
-        {"competitor": "helix-ledger", "url": target, "jobs": ["walker"], "start": f"{target}/sign-in", "countries": ["CA"], "accountRef": "trial1", "runId": f"helix-login-{stamp}"},
+        {"competitor": "helix-ledger", "url": target, "jobs": ["walker"], "start": f"{target}/sign-in", "countries": [], "accountRef": "trial1", "runId": f"helix-login-{stamp}"},  # no proxy: the tunnel challenges proxied traffic with a Cloudflare CAPTCHA
     ]
     launched = []
     for body in runs:
