@@ -1,0 +1,24 @@
+<!doctype html><html><head><title>Pricing</title>
+<style>.hidden{display:none}</style></head><body>
+<nav><a href="/">Home</a><a href="/pricing">Pricing</a></nav>
+<h1>Plans</h1>
+<div role="radiogroup" aria-label="Billing period">
+  <button role="radio" aria-checked="true" id="monthly" onclick="show('m')">Monthly</button>
+  <button role="radio" aria-checked="false" id="annual" onclick="show('a')">Annual</button>
+</div>
+<div id="m"><p>Starter $12 per user per month</p><p>Business $24 per user per month</p></div>
+<div id="a" class="hidden"><p>Starter $10 per user per month billed annually</p><p>Business $20 per user per month billed annually</p><p>Annual plans include priority support</p></div>
+<label>Seats <select name="seats"><option>1 seat</option><option>5 seats</option><option>25 seats</option><option>Enterprise 100+ seats</option></select></label>
+<button aria-describedby="tip1">Fair use limits <span title="Up to 1,000 automations per month on Business">i</span></button>
+<div id="tip1" role="tooltip" class="hidden">Up to 1,000 automations per month on Business</div>
+<details><summary>What counts as a seat?</summary><p>Guests do not count as seats. Members do.</p></details>
+<a href="/security-whitepaper.pdf" class="hidden" id="doc">Security whitepaper</a>
+<button onclick="document.getElementById('doc').classList.remove('hidden')">Show more</button>
+<button onclick="location.href='/checkout'">Buy now</button>
+<a href="/enterprise">Contact sales</a>
+<script>
+function show(id){ document.getElementById('m').classList.toggle('hidden', id!=='m'); document.getElementById('a').classList.toggle('hidden', id!=='a');
+ document.getElementById('monthly').setAttribute('aria-checked', id==='m'); document.getElementById('annual').setAttribute('aria-checked', id==='a'); }
+document.querySelector('[aria-describedby=tip1]').addEventListener('mouseenter', () => document.getElementById('tip1').classList.remove('hidden'));
+</script>
+</body></html>

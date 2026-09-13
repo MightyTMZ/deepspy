@@ -1,0 +1,11 @@
+<!doctype html><html><head><title>Nav duplicates</title>
+<style>.tablet,.phone{display:none}</style></head><body>
+<nav class="desktop"><a href="/">Home</a><a href="/about">About</a></nav>
+<nav class="tablet"><a href="/">Home</a><a href="/about">About</a></nav>
+<nav class="phone"><a href="/">Home</a><a href="/about">About</a></nav>
+<h1>Welcome</h1>
+<div role="tablist"><button role="tab" aria-selected="true" onclick="pick(1)">Overview</button><button role="tab" aria-selected="false" onclick="pick(2)">Legal</button></div>
+<section id="p1">Overview text here.</section>
+<section id="p2" style="display:none"><p>Service Level Agreement</p><p>Terms of Service</p><a href="/terms.docx">Download</a></section>
+<script>function pick(n){document.getElementById('p1').style.display=n===1?'':'none';document.getElementById('p2').style.display=n===2?'':'none';}</script>
+</body></html>

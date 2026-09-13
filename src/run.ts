@@ -80,7 +80,7 @@ for (const t of jobTypes) {
   }
 }
 coordinator.enqueue(jobs);
-for (const j of coordinator.getState().queued) jobHints.set(j.id, { purpose: j.type === "walker" ? "walker" : j.type === "borders" ? "borders" : "reveal", competitor, url: j.urls[0] });
+for (const j of coordinator.getState().queued) jobHints.set(j.id, { purpose: j.type === "walker" ? "walker" : j.type === "borders" ? "borders" : j.type === "reveal" ? "reveal" : "surface", competitor, url: j.urls[0] });
 
 const shutdown = async () => { console.log("shutting down, releasing sessions..."); resume.close(); storage.close(); process.exit(130); };
 process.on("SIGINT", () => void shutdown());
