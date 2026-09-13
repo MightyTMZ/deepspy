@@ -1,0 +1,25 @@
+{
+  "name": "periscope",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest",
+    "test:live": "vitest --config vitest.live.config.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
+    "@browserbasehq/stagehand": "^4.1.0",
+    "playwright-core": "^1.49.0",
+    "sharp": "^0.33.0",
+    "steel-sdk": "^0.18.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  },
+  "workspaces": ["packages/*"]
+}
