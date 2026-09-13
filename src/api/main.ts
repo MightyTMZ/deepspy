@@ -34,9 +34,10 @@ const api = await createApi({
 if (autoExtract) {
   // After a run finishes, fill the matrix so the frontend has rows without a manual step. Costs one model call per competitor.
   const seen = new Set<string>();
+  const startedAt = new Date().toISOString();
   setInterval(() => {
     for (const r of storage.listRuns(20)) {
-      if (r.status !== "completed" || seen.has(r.id) || storage.getFindingsByRun(r.id, "feature").length > 0) continue;
+      if (r.status !== "completed" || r.createdAt < startedAt || seen.has(r.id) || storage.getFindingsByRun(r.id, "feature").length > 0) continue;
       seen.add(r.id);
       const competitors = [...new Set(storage.getJobsByRun(r.id).map((j) => j.competitor).filter((x): x is string => Boolean(x)))];
       for (const competitor of competitors) extractFeatures({ storage, runId: r.id, competitor, complete: complete! }).then((x) => console.log(`[${r.id}] matrix ${competitor}: ${x.rows.length} rows, ${x.findings.length} findings, ${x.tokensIn}+${x.tokensOut} tokens`), (e) => console.warn(`[${r.id}] extract failed: ${(e as Error).message}`));

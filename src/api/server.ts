@@ -255,7 +255,7 @@ export function createApi(opts: ApiOptions): Promise<Api> {
     }
     json(c.res, 200, { ok: true, runId: c.params.id, extracted: results, ...matrixView(c.params.id) });
   });
-  route("GET", "/runs/:id/diff", (c) => {
+  route("GET", "/runs/:id/diff", async (c) => {
     if (!runOr404(c)) return;
     const from = c.url.searchParams.get("from");
     if (!from) return json(c.res, 400, { ok: false, reason: "query ?from=<earlier runId> is required" });
