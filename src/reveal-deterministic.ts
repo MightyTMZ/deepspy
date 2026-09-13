@@ -333,6 +333,19 @@ async function hover(ctx: Ctx): Promise<void> {
   }
 }
 
+/** Close whatever a click opened: Escape first, then an explicit Close button, so the next card is clickable. */
+async function closeOverlay(ctx: Ctx): Promise<void> {
+  const page = ctx.cfg.page;
+  await page.keyboard.press("Escape").catch(() => undefined);
+  await page.waitForTimeout(200);
+  const close = page.locator("button, [role=button]").filter({ hasText: /^\s*(close|dismiss|got it|ok|×|✕|x)\s*$/i }).first();
+  if (await close.isVisible().catch(() => false)) { await close.click({ timeout: 2000 }).catch(() => undefined); ctx.actions++; await page.waitForTimeout(200); }
+  else {
+    const aria = page.locator("[aria-label=Close], [aria-label=close], [data-dismiss]").first();
+    if (await aria.isVisible().catch(() => false)) { await aria.click({ timeout: 2000 }).catch(() => undefined); ctx.actions++; await page.waitForTimeout(200); }
+  }
+}
+
 async function modals(ctx: Ctx): Promise<void> {
   const page = ctx.cfg.page;
   // Card buttons and expandable rows: a button that wraps a heading, a paragraph or a status badge opens a modal or
@@ -347,8 +360,7 @@ async function modals(ctx: Ctx): Promise<void> {
     if (inNav) continue;
     if (await guardedClick(ctx, el, label)) {
       await capture(ctx, "modals", { action: "click", label });
-      await page.keyboard.press("Escape").catch(() => undefined);
-      await page.waitForTimeout(250);
+      await closeOverlay(ctx);
     }
   }
   const triggers = page.locator("button, [role=button], a").filter({ hasText: /^(compare( plans| all plans)?|watch( demo| video)?|see demo|details|learn more|view details|see all features|all features)\s*[+\-–—▾▸›»]?\s*$/i });

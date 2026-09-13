@@ -86,7 +86,7 @@ async function conditionPeriscope(): Promise<{ material: string; stats: Record<s
     await page.waitForURL(/\/dashboard/, { timeout: 30_000 }).catch(() => undefined);
     const signedIn = /\/dashboard/.test(page.url());
     if (signedIn) {
-      const walk = await walkDeterministic({ runId: "bench", jobId: "walk", competitor: "helix", startUrl: base + "/dashboard", page, handle: { ...handleFor(page), vantage: { country: null, device: "desktop", authenticated: true } }, sink, maxScreens: 20 });
+      const walk = await walkDeterministic({ runId: "bench", jobId: "walk", competitor: "helix", startUrl: base + "/dashboard", page, handle: { ...handleFor(page), vantage: { country: null, device: "desktop", authenticated: true } }, sink, maxScreens: 20, revealOnScreens: ["selects", "toggles", "tabs", "modals"] });
       const lines = [...walk.screens.values()].flatMap((s) => s.observations.map((o) => o.text));
       stats.interior += lines.length; stats.screens = walk.screens.size;
       parts.push(`## signed-in walk (${walk.screens.size} screens, ${walk.stoppedReason})\n${lines.join("\n")}`);

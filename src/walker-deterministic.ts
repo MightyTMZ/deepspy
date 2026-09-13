@@ -14,7 +14,7 @@ import { createObservation } from "./utils/observation-factory.js";
 import { textHash } from "./utils/text.js";
 import { saveScreenshot } from "./utils/screenshot.js";
 import { classifyFromDom } from "./steel/walls.js";
-import { visibleLines, CODE_LIKE } from "./reveal-deterministic.js";
+import { visibleLines, CODE_LIKE, revealDeterministic, type StrategyName } from "./reveal-deterministic.js";
 import type { WalkerResult, ScreenInfo } from "./walker.js";
 
 export interface DeterministicWalkerConfig {
@@ -36,9 +36,11 @@ export interface DeterministicWalkerConfig {
    * human handoff when the form was not filled or the wall stays.
    */
   autoLogin?: boolean;
+  /** Reveal strategies to run on every screen (expandable rows, selects, modals). Default: none, links only. */
+  revealOnScreens?: StrategyName[];
 }
 
-const DEFAULT_BLOCK = /\b(pay|buy|delete|remove|send|invite|publish|upgrade|subscribe|confirm order|submit|log ?out|sign ?out|cancel (plan|subscription)|checkout|billing)\b/i;
+const DEFAULT_BLOCK = /\b(pay|buy|delete|remove|send|invite|publish|upgrade|subscribe|confirm order|submit|log ?out|sign ?out|cancel (plan|subscription)|checkout|update payment)\b/i;
 const NOT_A_PAGE = /\.(pdf|docx?|xlsx?|pptx?|csv|zip|png|jpe?g|gif|svg|mp4|webm)(\?|#|$)|^(mailto|tel|javascript):/i;
 
 function canonical(u: string): string {
@@ -190,6 +192,14 @@ export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise
     }
 
     const { hash } = await record(next.label, next.parentHash);
+    if (cfg.revealOnScreens?.length) {
+      // Expand what the screen hides (rows, selects, cards) and file it under this screen.
+      const res = await revealDeterministic({
+        runId: cfg.runId, jobId: cfg.jobId, competitor: cfg.competitor, url: page.url(), surfaceBaseline: cfg.surfaceBaseline ?? "",
+        page, handle: cfg.handle, sink: cfg.sink, strategies: cfg.revealOnScreens, maxActionsPerStrategy: 10,
+      }).catch(() => undefined);
+      if (res) { const screen = screens.get(hash); if (screen) screen.observations.push(...res.observations.map((o) => ({ ...o, layer: "interior" as const }))); }
+    }
     for (const link of await linksOn(page, root)) {
       if (visitedUrls.has(link.href)) continue;
       if (DEFAULT_BLOCK.test(link.label) || DEFAULT_BLOCK.test(link.href)) {
