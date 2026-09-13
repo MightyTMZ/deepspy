@@ -1,0 +1,85 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/prices"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "runId": "run-saturday",
+    "rows": [
+      {
+        "url": "https://www.spotify.com/premium/",
+        "country": "CA",
+        "device": "desktop",
+        "vantage": "CA/desktop",
+        "amount": "13.99",
+        "currency": "USD",
+        "period": "month",
+        "text": "$13.99 / month after. Cancel anytime.",
+        "observationId": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"CA\",\"device\":\"desktop\",\"authenticated\":false}|$13.99 / month after. Cancel anytime.",
+        "layer": "borders"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "country": "CA",
+        "device": "mobile",
+        "vantage": "CA/mobile",
+        "amount": "13.99",
+        "currency": "USD",
+        "period": "month",
+        "text": "$13.99 / month after. Cancel anytime.",
+        "observationId": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"CA\",\"device\":\"mobile\",\"authenticated\":false}|$13.99 / month after. Cancel anytime.",
+        "layer": "borders"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "country": "DE",
+        "device": "desktop",
+        "vantage": "DE/desktop",
+        "amount": "12.99",
+        "currency": "EUR",
+        "period": "month",
+        "text": "Danach 12,99 €/Monat",
+        "observationId": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"DE\",\"device\":\"desktop\",\"authenticated\":false}|Danach 12,99 €/Monat",
+        "layer": "borders"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "country": "DE",
+        "device": "mobile",
+        "vantage": "DE/mobile",
+        "amount": "12.99",
+        "currency": "EUR",
+        "period": "month",
+        "text": "Danach 12,99 €/Monat",
+        "observationId": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"DE\",\"device\":\"mobile\",\"authenticated\":false}|Danach 12,99 €/Monat",
+        "layer": "borders"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "country": "US",
+        "device": "desktop",
+        "vantage": "US/desktop",
+        "amount": "12.99",
+        "currency": "USD",
+        "period": "month",
+        "text": "$12.99 / month after",
+        "observationId": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"US\",\"device\":\"desktop\",\"authenticated\":false}|$12.99 / month after",
+        "layer": "borders"
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "country": "US",
+        "device": "mobile",
+        "vantage": "US/mobile",
+        "amount": "12.99",
+        "currency": "USD",
+        "period": "month",
+        "text": "$12.99 / month after",
+        "observationId": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"US\",\"device\":\"mobile\",\"authenticated\":false}|$12.99 / month after",
+        "layer": "borders"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/matrix"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "runId": "run-saturday",
+    "rows": [
+      {
+        "id": "finding-sla",
+        "competitor": "ornn",
+        "feature": "Service level agreement published",
+        "status": "observed",
+        "value": "SLA docx behind the Legal tab",
+        "evidence": [
+          "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
+          "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/findings/finding-sla"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "finding": {
+      "id": "finding-sla",
+      "runId": "run-saturday",
+      "competitor": "ornn",
+      "kind": "feature",
+      "title": "Service level agreement published",
+      "status": "observed",
+      "value": "SLA docx behind the Legal tab",
+      "observationIds": [
+        "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
+        "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx"
+      ],
+      "createdAt": "2026-09-13T10:37:08.916Z"
+    },
+    "observations": [
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "text",
+        "text": "Service Level Agreement",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:37:08.914Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "steelSessionId": "sess-1",
+        "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+      },
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "document",
+        "text": "https://ornn.com/docs/ornn-sla.docx",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:37:08.914Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "screenshotPath": "data/walls/example.png"
+      }
+    ],
+    "artifacts": [
+      {
+        "observationId": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx",
+        "path": "data/walls/example.png",
+        "exists": false
+      }
+    ],
+    "unresolved": 0
+  }
+}

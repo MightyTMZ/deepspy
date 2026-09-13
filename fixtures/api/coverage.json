@@ -1,0 +1,51 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/coverage"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "runId": "run-saturday",
+    "pages": [
+      {
+        "url": "https://ornn.com/regulatory",
+        "surface": 4,
+        "hidden": 4,
+        "missedByFetch": 4,
+        "documents": 1,
+        "vantages": [
+          "-/desktop"
+        ],
+        "byAction": {
+          "Legal": 4
+        },
+        "counter": 4
+      },
+      {
+        "url": "https://www.spotify.com/premium/",
+        "surface": 0,
+        "hidden": 0,
+        "missedByFetch": 0,
+        "documents": 0,
+        "vantages": [
+          "CA/desktop",
+          "CA/mobile",
+          "DE/desktop",
+          "DE/mobile",
+          "US/desktop",
+          "US/mobile"
+        ],
+        "byAction": {},
+        "counter": 0
+      }
+    ],
+    "totals": {
+      "surface": 4,
+      "hidden": 4,
+      "missedByFetch": 4,
+      "documents": 1,
+      "authenticated": 0
+    }
+  }
+}

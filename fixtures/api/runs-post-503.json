@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/runs",
+    "body": {
+      "competitor": "ornn",
+      "url": "https://ornn.com",
+      "pages": [
+        "/regulatory"
+      ],
+      "jobs": [
+        "surface",
+        "benchmark",
+        "reveal"
+      ]
+    }
+  },
+  "status": 503,
+  "response": {
+    "ok": false,
+    "reason": "steel not configured; this API is read-only",
+    "spec": {
+      "runId": "run-mtzojdq7-8cc626",
+      "competitor": "ornn",
+      "url": "https://ornn.com",
+      "pages": [
+        "/regulatory"
+      ],
+      "jobs": [
+        "surface",
+        "benchmark",
+        "reveal"
+      ]
+    }
+  }
+}

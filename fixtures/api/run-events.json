@@ -1,0 +1,683 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/events?format=json"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "events": [
+      {
+        "eventId": 28,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "job_state",
+        "createdAt": "2026-09-13T10:37:08.913Z",
+        "event": {
+          "type": "job_state",
+          "data": {
+            "jobId": "run-saturday-reveal",
+            "state": "running"
+          }
+        }
+      },
+      {
+        "eventId": 29,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.913Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Regulatory",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "surface",
+            "source": "browser",
+            "kind": "text",
+            "text": "Regulatory",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.913Z"
+          }
+        }
+      },
+      {
+        "eventId": 30,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.913Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Ornn is built for compliance teams",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "surface",
+            "source": "browser",
+            "kind": "text",
+            "text": "Ornn is built for compliance teams",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.913Z"
+          }
+        }
+      },
+      {
+        "eventId": 31,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.913Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Overview",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "surface",
+            "source": "browser",
+            "kind": "text",
+            "text": "Overview",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.913Z"
+          }
+        }
+      },
+      {
+        "eventId": 32,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Legal",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "surface",
+            "source": "browser",
+            "kind": "text",
+            "text": "Legal",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.914Z"
+          }
+        }
+      },
+      {
+        "eventId": 33,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "hidden",
+            "source": "browser",
+            "kind": "text",
+            "text": "Service Level Agreement",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.914Z",
+            "missedByFetch": true,
+            "revealedBy": {
+              "action": "click",
+              "label": "Legal"
+            },
+            "steelSessionId": "sess-1",
+            "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+          }
+        }
+      },
+      {
+        "eventId": 34,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Terms of Service",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "hidden",
+            "source": "browser",
+            "kind": "text",
+            "text": "Terms of Service",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.914Z",
+            "missedByFetch": true,
+            "revealedBy": {
+              "action": "click",
+              "label": "Legal"
+            },
+            "steelSessionId": "sess-1",
+            "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+          }
+        }
+      },
+      {
+        "eventId": 35,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Acceptable Use Policy",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "hidden",
+            "source": "browser",
+            "kind": "text",
+            "text": "Acceptable Use Policy",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.914Z",
+            "missedByFetch": true,
+            "revealedBy": {
+              "action": "click",
+              "label": "Legal"
+            },
+            "steelSessionId": "sess-1",
+            "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+          }
+        }
+      },
+      {
+        "eventId": 36,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-reveal",
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "layer": "hidden",
+            "source": "browser",
+            "kind": "document",
+            "text": "https://ornn.com/docs/ornn-sla.docx",
+            "vantage": {
+              "country": null,
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.914Z",
+            "missedByFetch": true,
+            "revealedBy": {
+              "action": "click",
+              "label": "Legal"
+            },
+            "screenshotPath": "data/walls/example.png"
+          }
+        }
+      },
+      {
+        "eventId": 37,
+        "runId": "run-saturday",
+        "jobId": null,
+        "type": "counter",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "counter",
+          "data": {
+            "competitor": "ornn",
+            "url": "https://ornn.com/regulatory",
+            "missed": 4
+          }
+        }
+      },
+      {
+        "eventId": 38,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "job_state",
+        "createdAt": "2026-09-13T10:37:08.914Z",
+        "event": {
+          "type": "job_state",
+          "data": {
+            "jobId": "run-saturday-reveal",
+            "state": "completed"
+          }
+        }
+      },
+      {
+        "eventId": 39,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "job_state",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "job_state",
+          "data": {
+            "jobId": "run-saturday-borders",
+            "state": "running"
+          }
+        }
+      },
+      {
+        "eventId": 40,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"CA\",\"device\":\"desktop\",\"authenticated\":false}|$13.99 / month after. Cancel anytime.",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "$13.99 / month after. Cancel anytime.",
+            "vantage": {
+              "country": "CA",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 41,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"CA\",\"device\":\"mobile\",\"authenticated\":false}|$13.99 / month after. Cancel anytime.",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "$13.99 / month after. Cancel anytime.",
+            "vantage": {
+              "country": "CA",
+              "device": "mobile",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 42,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"US\",\"device\":\"desktop\",\"authenticated\":false}|$12.99 / month after",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "$12.99 / month after",
+            "vantage": {
+              "country": "US",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 43,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"US\",\"device\":\"mobile\",\"authenticated\":false}|$12.99 / month after",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "$12.99 / month after",
+            "vantage": {
+              "country": "US",
+              "device": "mobile",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 44,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"DE\",\"device\":\"desktop\",\"authenticated\":false}|Danach 12,99 €/Monat",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "Danach 12,99 €/Monat",
+            "vantage": {
+              "country": "DE",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 45,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"DE\",\"device\":\"mobile\",\"authenticated\":false}|Danach 12,99 €/Monat",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "Danach 12,99 €/Monat",
+            "vantage": {
+              "country": "DE",
+              "device": "mobile",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 46,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.915Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"US\",\"device\":\"desktop\",\"authenticated\":false}|Spotify Premium Student offer currently includes access to Hulu",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "Spotify Premium Student offer currently includes access to Hulu",
+            "vantage": {
+              "country": "US",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.915Z"
+          }
+        }
+      },
+      {
+        "eventId": 47,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"CA\",\"device\":\"desktop\",\"authenticated\":false}|Premium Individual",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "Premium Individual",
+            "vantage": {
+              "country": "CA",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.916Z"
+          }
+        }
+      },
+      {
+        "eventId": 48,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"US\",\"device\":\"desktop\",\"authenticated\":false}|Premium Individual",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "Premium Individual",
+            "vantage": {
+              "country": "US",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.916Z"
+          }
+        }
+      },
+      {
+        "eventId": 49,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "observation",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "observation",
+          "data": {
+            "id": "run-saturday|run-saturday-borders|https://www.spotify.com/premium/|{\"country\":\"DE\",\"device\":\"desktop\",\"authenticated\":false}|Premium Individual",
+            "runId": "run-saturday",
+            "jobId": "run-saturday-borders",
+            "competitor": "ornn",
+            "url": "https://www.spotify.com/premium/",
+            "layer": "borders",
+            "source": "browser",
+            "kind": "text",
+            "text": "Premium Individual",
+            "vantage": {
+              "country": "DE",
+              "device": "desktop",
+              "authenticated": false
+            },
+            "perception": "dom",
+            "capturedAt": "2026-09-13T10:37:08.916Z"
+          }
+        }
+      },
+      {
+        "eventId": 50,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "handoff",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "handoff",
+          "data": {
+            "jobId": "run-saturday-borders",
+            "viewerUrl": "https://app.steel.dev/sessions/sess-2",
+            "wall": "captcha",
+            "generation": 1,
+            "state": "awaiting_human"
+          }
+        }
+      },
+      {
+        "eventId": 51,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "handoff",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "handoff",
+          "data": {
+            "jobId": "run-saturday-borders",
+            "viewerUrl": "https://app.steel.dev/sessions/sess-2",
+            "wall": "captcha",
+            "generation": 1,
+            "state": "resumed"
+          }
+        }
+      },
+      {
+        "eventId": 52,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "type": "receipt",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "receipt",
+          "data": {
+            "jobId": "run-saturday-reveal",
+            "step": 1,
+            "action": "extract",
+            "target": "Legal tab",
+            "before": "sha-before",
+            "after": "sha-after",
+            "ok": true,
+            "tokensIn": 1200,
+            "tokensOut": 300,
+            "usd": 0.42
+          }
+        }
+      },
+      {
+        "eventId": 53,
+        "runId": "run-saturday",
+        "jobId": "run-saturday-borders",
+        "type": "job_state",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "job_state",
+          "data": {
+            "jobId": "run-saturday-borders",
+            "state": "completed"
+          }
+        }
+      },
+      {
+        "eventId": 54,
+        "runId": "run-saturday",
+        "jobId": null,
+        "type": "run_done",
+        "createdAt": "2026-09-13T10:37:08.916Z",
+        "event": {
+          "type": "run_done",
+          "data": {
+            "runId": "run-saturday"
+          }
+        }
+      }
+    ]
+  }
+}

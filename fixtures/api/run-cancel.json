@@ -1,0 +1,56 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/runs/run-saturday/cancel",
+    "body": {}
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "run": {
+      "id": "run-saturday",
+      "status": "cancelled",
+      "goal": null,
+      "category": "demo",
+      "capMicroUsd": 12000000,
+      "spentMicroUsd": 420000,
+      "createdAt": "2026-09-13T10:37:08.913Z",
+      "updatedAt": "2026-09-13T10:37:09.061Z",
+      "completedAt": "2026-09-13T10:37:08.916Z",
+      "reason": "cancelled through the API",
+      "spentUsd": 0.42,
+      "capUsd": 12,
+      "live": false
+    },
+    "jobs": [
+      {
+        "id": "run-saturday-reveal",
+        "purpose": "reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "state": "completed",
+        "reason": null
+      },
+      {
+        "id": "run-saturday-borders",
+        "purpose": "borders",
+        "competitor": "ornn",
+        "url": "https://www.spotify.com/premium/",
+        "state": "completed",
+        "reason": null
+      }
+    ],
+    "counts": {
+      "observations": 18,
+      "events": 27,
+      "handoffs": 2
+    },
+    "counters": [
+      {
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "missed": 4
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/jobs/run-saturday-borders/takeover",
+    "body": {}
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "jobId": "run-saturday-borders",
+    "wall": "captcha",
+    "generation": 2,
+    "viewerUrl": "https://app.steel.dev/sessions/sess-2",
+    "then": "POST /jobs/run-saturday-borders/resume with {\"generation\": 2}"
+  }
+}
