@@ -79,8 +79,9 @@ async function conditionPeriscope(): Promise<{ material: string; stats: Record<s
     await page.goto(base + "/sign-in", { waitUntil: "load" });
     await page.fill("input[name=email]", process.env.HELIX_EMAIL ?? "test@test.com");
     await page.fill("input[name=password]", process.env.HELIX_PASSWORD ?? "admin123");
-    const box = page.locator("altcha-widget input[type=checkbox]").first();
-    if (await box.count()) { await box.click(); await page.waitForFunction(() => (document.querySelector('input[name="altcha"]') as HTMLInputElement | null)?.value, undefined, { timeout: 30_000 }).catch(() => undefined); }
+    await page.waitForSelector("altcha-widget input[type=checkbox]", { timeout: 20_000 }).catch(() => undefined);
+    const box = page.locator("altcha-widget label").first();
+    if (await box.count()) { await box.click({ force: true }); await page.waitForFunction(() => (document.querySelector('input[name="altcha"]') as HTMLInputElement | null)?.value, undefined, { timeout: 30_000 }).catch(() => undefined); }
     await page.click("button[type=submit]");
     await page.waitForURL(/\/dashboard/, { timeout: 30_000 }).catch(() => undefined);
     const signedIn = /\/dashboard/.test(page.url());

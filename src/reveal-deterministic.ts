@@ -335,6 +335,22 @@ async function hover(ctx: Ctx): Promise<void> {
 
 async function modals(ctx: Ctx): Promise<void> {
   const page = ctx.cfg.page;
+  // Card buttons and expandable rows: a button that wraps a heading, a paragraph or a status badge opens a modal or
+  // unfolds details (feature cards with "Learn more", integration rows). Click, capture, close with Escape.
+  const cards = page.locator("button:has(h2), button:has(h3), button:has(h4), button:has(p), button[class*=justify-between], [role=button]:has(h3)");
+  const cn = Math.min(await cards.count(), ctx.max);
+  for (let i = 0; i < cn; i++) {
+    const el = cards.nth(i);
+    const label = (await labelOf(el)).split(/\s{2,}/)[0].split(String.fromCharCode(10))[0].slice(0, 60);
+    if (!label || NAV_LABEL.test(label)) continue;
+    const inNav = await el.evaluate((e) => Boolean(e.closest("nav, header, [role=navigation], form"))).catch(() => false);
+    if (inNav) continue;
+    if (await guardedClick(ctx, el, label)) {
+      await capture(ctx, "modals", { action: "click", label });
+      await page.keyboard.press("Escape").catch(() => undefined);
+      await page.waitForTimeout(250);
+    }
+  }
   const triggers = page.locator("button, [role=button], a").filter({ hasText: /^(compare( plans| all plans)?|watch( demo| video)?|see demo|details|learn more|view details|see all features|all features)\s*[+\-–—▾▸›»]?\s*$/i });
   const n = Math.min(await triggers.count(), ctx.max);
   for (let i = 0; i < n; i++) {
