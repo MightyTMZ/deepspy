@@ -13,7 +13,9 @@ export type WallVerdict = { wall: WallKind; confidence: number; evidence: string
 const asksForInput = (h: string): boolean => /<input(?![^>]*type=["'](hidden|submit|button)["'])[^>]*>|<textarea|<select/i.test(h);
 
 const DOM_RULES: Array<{ wall: WallKind; test: (t: string, html: string) => boolean }> = [
-  { wall: "captcha", test: (t, h) => /captcha|are you human|verify you are|hcaptcha|turnstile/i.test(t + h) },
+  // Widget markup or visible challenge text only. Scripts mention "captcha" on every page once Steel's solver is on.
+  { wall: "captcha", test: (t, h) => /are you (a )?human|verify (that )?you are (a )?human|complete the (captcha|security check)|checking your browser|prove you are not a robot/i.test(t)
+      || /class=["'][^"']*(g-recaptcha|cf-turnstile|h-captcha)|<iframe[^>]+(recaptcha|hcaptcha|turnstile|challenges\.cloudflare\.com|funcaptcha|arkoselabs)/i.test(h) },
   { wall: "payment", test: (t, h) => asksForInput(h) && (/card number|cvv|cvc|expiry|expiration|billing address|iban/i.test(t) || /autocomplete=["']cc-number/i.test(h)) },
   { wall: "2fa", test: (t, h) => asksForInput(h) && /two[- ]factor|authenticator app|6-digit code|verification code from your app|enter the code/i.test(t) },
   { wall: "email_code", test: (t, h) => asksForInput(h) && /code (we )?sent to your email|check your (inbox|email) for a code|magic link/i.test(t) },
