@@ -322,14 +322,14 @@
       "label": "Team members page",
       "accept": [
         "Team Members"
-      ]
+      ],
+      "all": false
     },
     {
       "id": "dash4",
       "group": "Dashboard",
-      "label": "Activity log page",
+      "label": "Activity log page: Recent Activity",
       "accept": [
-        "Activity Log",
         "Recent Activity"
       ]
     },
@@ -344,66 +344,82 @@
     {
       "id": "int1",
       "group": "Dashboard integrations",
-      "label": "Stripe",
+      "label": "Stripe listed with status Active",
       "accept": [
-        "Stripe"
-      ]
+        "Stripe",
+        "Active"
+      ],
+      "all": true
     },
     {
       "id": "int2",
       "group": "Dashboard integrations",
-      "label": "PayPal",
+      "label": "PayPal listed with status Active",
       "accept": [
-        "PayPal"
-      ]
+        "PayPal",
+        "Active"
+      ],
+      "all": true
     },
     {
       "id": "int3",
       "group": "Dashboard integrations",
-      "label": "Square",
+      "label": "Square listed with status Active",
       "accept": [
-        "Square"
-      ]
+        "Square",
+        "Active"
+      ],
+      "all": true
     },
     {
       "id": "int4",
       "group": "Dashboard integrations",
-      "label": "Shopify",
+      "label": "Shopify listed with status Active",
       "accept": [
-        "Shopify"
-      ]
+        "Shopify",
+        "Active"
+      ],
+      "all": true
     },
     {
       "id": "int5",
       "group": "Dashboard integrations",
-      "label": "Slack",
+      "label": "Slack listed with status Active",
       "accept": [
-        "Slack"
-      ]
+        "Slack",
+        "Active"
+      ],
+      "all": true
     },
     {
       "id": "int6",
       "group": "Dashboard integrations",
-      "label": "Mailchimp",
+      "label": "Mailchimp listed with status Active",
       "accept": [
-        "Mailchimp"
-      ]
+        "Mailchimp",
+        "Active"
+      ],
+      "all": true
     },
     {
       "id": "int7",
       "group": "Dashboard integrations",
-      "label": "QuickBooks sync",
+      "label": "QuickBooks sync listed with status Beta",
       "accept": [
-        "QuickBooks sync"
-      ]
+        "QuickBooks sync",
+        "Beta"
+      ],
+      "all": true
     },
     {
       "id": "int8",
       "group": "Dashboard integrations",
-      "label": "Xero",
+      "label": "Xero listed with status Coming soon",
       "accept": [
-        "Xero"
-      ]
+        "Xero",
+        "Coming soon"
+      ],
+      "all": true
     },
     {
       "id": "intd1",
@@ -480,34 +496,42 @@
     {
       "id": "rep1",
       "group": "Generate report types",
-      "label": "Profit & Loss",
+      "label": "report type Profit & Loss in the generator dropdown",
       "accept": [
-        "Profit & Loss"
-      ]
+        "Profit & Loss",
+        "Select a report type"
+      ],
+      "all": true
     },
     {
       "id": "rep2",
       "group": "Generate report types",
-      "label": "Balance Sheet",
+      "label": "report type Balance Sheet in the generator dropdown",
       "accept": [
-        "Balance Sheet"
-      ]
+        "Balance Sheet",
+        "Select a report type"
+      ],
+      "all": true
     },
     {
       "id": "rep3",
       "group": "Generate report types",
-      "label": "Cash Flow Statement",
+      "label": "report type Cash Flow Statement in the generator dropdown",
       "accept": [
-        "Cash Flow Statement"
-      ]
+        "Cash Flow Statement",
+        "Select a report type"
+      ],
+      "all": true
     },
     {
       "id": "rep4",
       "group": "Generate report types",
-      "label": "AR Aging",
+      "label": "report type AR Aging in the generator dropdown",
       "accept": [
-        "AR Aging"
-      ]
+        "AR Aging",
+        "Select a report type"
+      ],
+      "all": true
     },
     {
       "id": "rec1",

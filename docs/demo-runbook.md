@@ -126,7 +126,7 @@ Then `GET /runs/demo-api-1/coverage`, `/borders`, `/prices`, `/diff?from=<earlie
 
 ## The Helix Ledger demo (the team's test SaaS, one button)
 
-Helix Ledger lives in `../test_saas_startup` (Next.js, in-memory store, seeded user `test@test.com` / `admin123`). Steel's browsers run in the cloud, so the app needs a public url. Two windows:
+Helix Ledger lives in `../test_saas_startup` (Next.js, in-memory store, seeded user `test@test.com` / `admin123`) and is deployed at **https://testsaasstartup.vercel.app** (auto-deploys from that repo's main). The page defaults to that url. Only if Vercel is down, serve it locally through a tunnel:
 
 ```bash
 cd ../test_saas_startup && pnpm dev

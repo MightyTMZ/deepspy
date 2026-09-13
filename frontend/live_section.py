@@ -19,7 +19,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 API = os.environ.get("PERISCOPE_API_URL", "http://localhost:4747").rstrip("/")
-TARGET = os.environ.get("PERISCOPE_TARGET_URL", "").rstrip("/")  # public url of Helix Ledger; Steel's browsers run in the cloud
+TARGET = os.environ.get("PERISCOPE_TARGET_URL", "https://testsaasstartup.vercel.app").rstrip("/")  # Helix Ledger on Vercel; Steel's browsers run in the cloud
 TARGET_EMAIL = os.environ.get("PERISCOPE_TARGET_EMAIL", "test@test.com")
 COUNTRY_NAMES = {"CA": "Canada", "US": "United States", "DE": "Germany", "GB": "United Kingdom", "FR": "France", "JP": "Japan", "AU": "Australia", "IN": "India", "BR": "Brazil"}
 
@@ -260,9 +260,13 @@ def _story_card(rid: str, stats: dict) -> None:
             lines.append("<div class='l mut'>opening six browsers in three countries…</div>")
     else:
         logins = [e["event"]["data"]["reason"] for e in events if e.get("type") == "job_state" and (e["event"]["data"].get("reason") or "").startswith("login:")]
+        attempts = [e["event"]["data"]["reason"] for e in events if e.get("type") == "job_state" and (e["event"]["data"].get("reason") or "").startswith("login attempt:")]
         if logins:
             badges.append("<span class='steel'>credentials vault</span>")
-            lines.append("<div class='l ok'>🔑 Steel injected the stored credentials from its vault, the anti-bot box was cleared in the browser, <b>signed in without a human</b>. The model never saw the password.</div>")
+            lines.append("<div class='l ok'>🔑 Steel injected the stored credentials from its vault, the anti-bot box was verified in the browser, <b>signed in without a human</b>. The model never saw the password.</div>")
+        elif attempts:
+            badges.append("<span class='steel'>credentials vault</span>")
+            lines.append(f"<div class='l warn'>🔑 {attempts[-1].replace('login attempt: ', '').replace('; handing off to a human', '')}, so a human takes over in the live view</div>")
         if handoffs:
             last = handoffs[-1]
             state = last.get("state")
