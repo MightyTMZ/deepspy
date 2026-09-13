@@ -123,3 +123,27 @@ Then `GET /runs/demo-api-1/coverage`, `/borders`, `/prices`, `/diff?from=<earlie
 - **CAPTCHA beat:** jobs `walker`, start url `https://2captcha.com/demo/cloudflare-turnstile`. The wall is classified, Steel's solver runs first (the API must run with `STEEL_CAPTCHA=1`), the log prints `Steel CAPTCHA solver: solved`, the walk continues. If Steel gives up, the red wall card appears with the live view and a resume button.
 - **Login beat without a saved account:** jobs `walker`, start url = the competitor's login page. The walker stops at the login wall, the card turns red, a teammate types the password inside the embedded live view, clicks "I cleared it, resume", and the walker crawls the signed-in space in the same session. Periscope never sees the password.
 - **Six countries at once:** jobs `borders`, countries `CA,US,DE`: six browsers tile on the page, each captioned with its country and device.
+
+## The Helix Ledger demo (the team's test SaaS, one button)
+
+Helix Ledger lives in `../test_saas_startup` (Next.js, in-memory store, seeded user `test@test.com` / `admin123`). Steel's browsers run in the cloud, so the app needs a public url. Two windows:
+
+```bash
+cd ../test_saas_startup && pnpm dev
+```
+
+```bash
+npx --yes cloudflared tunnel --url http://localhost:3000
+```
+
+Copy the `https://<words>.trycloudflare.com` url the tunnel prints (it changes every time the tunnel restarts) and start the frontend with it:
+
+```bash
+PERISCOPE_TARGET_URL=https://<words>.trycloudflare.com python -m streamlit run frontend/app.py --server.port 8502
+```
+
+On the main page, under "Live: the agents at work on Steel", press **Run the Helix Ledger demo**. Three runs start at once and every browser appears in the live section:
+
+1. **Parse** (`helix-parse-*`): pricing, regulatory and security pages. The reveal flips the Monthly/Annual switch, opens Compare plans, selects every seat count, hovers Fair use limits, presses Show more, reads the ROI iframe and catches the page-load API call. Locally this finds all 18 planted lines plus the document and the API url; the counter reads about 23.
+2. **Three countries** (`helix-borders-*`): six browsers, CA sees CA$ prices and the GST line, DE sees € prices and the German cookie banner (declined automatically), US sees $.
+3. **Log in** (`helix-login-*`): the walker opens `/sign-in`, classifies the login wall, the card turns red. A teammate types the email and password in the embedded browser (the ALTCHA checkbox is part of the form), presses **I cleared it, resume**, and the walker crawls `/dashboard`, integrations, reports, settings and billing, recording the interior facts (seats used, bank connections, Beta and Coming soon badges, data region, card ending 4242) as interior observations. Billing and log-out links are observed, never pressed.
