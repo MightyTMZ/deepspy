@@ -104,11 +104,11 @@ def _steel_trace(sessions: list[dict], handoffs: list[dict]) -> tuple[list[str],
             stats["proxies"] += 1
         parts = [f"Steel opened browser #{stats['browsers']} for {s.get('competitor') or 'a target'}", f"purpose {s.get('purpose') or 'session'}", _country(v)]
         parts.append("mobile device emulation" if v.get("device") == "mobile" else "desktop")
-        if s.get("profileId"):
-            parts.append("saved login profile restored")
-            stats["logins"] += 1
         if s.get("accountRef"):
-            parts.append("credentials injected by Steel, never seen by the model")
+            parts.append("saved login: Steel profile restored and credentials injected, never seen by the model")
+            stats["logins"] += 1
+        elif s.get("purpose") == "walker":
+            parts.append("Steel keeps this session's profile so the login survives for later walks")
         trace.append(f"<span class='s'>{_now()} {' · '.join(parts)} · session {sid[:8]}</span>")
     for sid, info in list(seen.items()):
         if sid not in live_ids and not info.get("closed"):
@@ -279,7 +279,7 @@ def render_live_section(followed_runs: list[str] | None = None, on_launch=None) 
                 with cols[i % len(cols)]:
                     v = s.get("vantage") or {}
                     tags = [f"<span class='lv-tag blue'>{s.get('purpose') or 'session'}</span>", f"<span class='lv-tag steel'>{COUNTRY_NAMES.get(v.get('country'), v.get('country')) + ' · proxy' if v.get('country') else 'home region'}</span>", f"<span class='lv-tag'>{v.get('device', 'desktop')}</span>"]
-                    if s.get("profileId") or s.get("accountRef"):
+                    if s.get("accountRef"):
                         tags.append("<span class='lv-tag green'>signed in</span>")
                     if s.get("pendingWall"):
                         tags.append(f"<span class='lv-tag red'>wall: {s['pendingWall']} · needs a human</span>")
