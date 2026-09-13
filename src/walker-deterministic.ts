@@ -30,6 +30,12 @@ export interface DeterministicWalkerConfig {
   wallScreenshotDir?: string; // default data/walls
   /** Lines already known from the surface pass; interior lines absent from it are flagged missedByFetch. */
   surfaceBaseline?: string;
+  /**
+   * Sign in without a human when a login wall appears: Steel has already injected the stored credentials from its
+   * vault (the model never sees the password), the walker ticks the anti-bot box and submits. Falls back to the
+   * human handoff when the form was not filled or the wall stays.
+   */
+  autoLogin?: boolean;
 }
 
 const DEFAULT_BLOCK = /\b(pay|buy|delete|remove|send|invite|publish|upgrade|subscribe|confirm order|submit|log ?out|sign ?out|cancel (plan|subscription)|checkout|billing)\b/i;
@@ -72,6 +78,45 @@ async function linksOn(page: Page, root: string): Promise<Array<{ href: string; 
     out.push({ href: c, label: l.label });
   }
   return out;
+}
+
+/**
+ * Steel fills the sign-in form from its credentials vault shortly after the page loads. The walker only waits for
+ * that, clears a self-hosted anti-bot checkbox (ALTCHA and similar solve themselves in the browser once ticked),
+ * presses the form's own submit button, and reports whether the password field is gone. No password ever passes
+ * through this code.
+ */
+export async function tryAutoLogin(page: Page): Promise<boolean> {
+  const pw = page.locator("input[type=password]").first();
+  try { await pw.waitFor({ state: "visible", timeout: 5000 }); } catch { return false; }
+  let filled = false;
+  for (let i = 0; i < 12 && !filled; i++) {
+    filled = ((await pw.inputValue().catch(() => "")) ?? "").length > 0;
+    if (!filled) await page.waitForTimeout(500);
+  }
+  if (!filled) return false;
+  await page.waitForTimeout(1500); // let the anti-bot widget finish initialising before it is ticked
+  const box = page.locator("altcha-widget input[type=checkbox], #altcha-placeholder input[type=checkbox], input[type=checkbox][name*=captcha i], input[type=checkbox][id*=altcha i]").first();
+  if (await box.count()) {
+    await box.click({ timeout: 3000, force: true }).catch(() => undefined);
+    for (let i = 0; i < 30; i++) {
+      const ok = await page.evaluate(() => {
+        const token = document.querySelector("input[name=altcha]") as HTMLInputElement | null;
+        const state = document.querySelector("div.altcha")?.getAttribute("data-state") ?? document.querySelector("altcha-widget")?.getAttribute("data-state");
+        return Boolean(token?.value) || state === "verified";
+      }).catch(() => false);
+      if (ok) break;
+      await page.waitForTimeout(500);
+    }
+  }
+  const submit = page.locator("form button[type=submit], form input[type=submit]").first();
+  if (!(await submit.count())) return false;
+  const before = page.url();
+  await submit.click({ timeout: 3000 }).catch(() => undefined);
+  await page.waitForURL((u) => u.toString() !== before, { timeout: 15_000 }).catch(() => undefined);
+  await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => undefined);
+  await page.waitForTimeout(800);
+  return (await page.locator("input[type=password]").count()) === 0;
 }
 
 export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise<WalkerResult> {
@@ -130,7 +175,15 @@ export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise
     }
     if (!canonical(page.url()).startsWith(root)) continue; // redirected off-site
 
-    const wall = await wallOn(page, cfg, generation);
+    let wall = await wallOn(page, cfg, generation);
+    if (wall && wall.wall === "login" && cfg.autoLogin && (await tryAutoLogin(page))) {
+      wall = await wallOn(page, cfg, generation);
+      if (!wall) {
+        await cfg.sink.write({ type: "job_state", data: { jobId: cfg.jobId, state: "running", reason: "login: Steel injected the stored credentials from its vault, the anti-bot box was cleared in the browser, signed in without a human" } });
+        visitedUrls.add(canonical(page.url()));
+        next.label = "signed in";
+      }
+    }
     if (wall) {
       generation++;
       return { screens, totalSteps, wallDetected: wall, stoppedReason: "wall" };

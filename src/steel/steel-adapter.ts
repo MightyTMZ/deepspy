@@ -58,7 +58,8 @@ export class SteelAdapter {
     const ns = req.accountRef ? this.opts.credentialNamespaceFor?.(req.accountRef) : undefined;
     if (ns) {
       createOpts.namespace = ns;
-      createOpts.credentials = { autoSubmit: false, blurFields: true, exactOrigin: true };
+      // blurFields off: Steel's blur overlay swallowed clicks on the page's anti-bot checkbox (Sept 13, ALTCHA on Helix); the field is type=password anyway
+      createOpts.credentials = { autoSubmit: false, blurFields: false, exactOrigin: true };
     }
 
     const extensionIds = this.opts.extensionIdsFor ? await this.opts.extensionIdsFor(req) : [];

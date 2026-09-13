@@ -416,6 +416,7 @@ export class Coordinator {
                 page,
                 handle,
                 sink: this.config.sink,
+                autoLogin: Boolean(job.accountRef), // Steel injects the stored credentials for this account; the walker signs in by itself
               });
 
           if (result.stoppedReason === "budget") {

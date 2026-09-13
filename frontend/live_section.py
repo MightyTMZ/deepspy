@@ -63,7 +63,8 @@ def launch_helix_demo(target: str) -> list[str]:
     runs = [
         {"competitor": "helix-ledger", "url": target, "pages": ["/pricing", "/regulatory", "/security"], "jobs": ["surface", "benchmark", "reveal"], "runId": f"helix-parse-{stamp}"},
         {"competitor": "helix-ledger", "url": target, "pages": ["/pricing"], "jobs": ["surface", "borders"], "countries": ["CA", "US", "DE"], "runId": f"helix-borders-{stamp}"},
-        {"competitor": "helix-ledger", "url": target, "jobs": ["walker"], "start": f"{target}/sign-in", "countries": ["CA"], "runId": f"helix-login-{stamp}"},
+        # accountRef trial1: Steel injects the credential stored in its vault for this account, the walker signs in by itself
+        {"competitor": "helix-ledger", "url": target, "jobs": ["walker"], "start": f"{target}/sign-in", "countries": ["CA"], "accountRef": "trial1", "runId": f"helix-login-{stamp}"},
     ]
     launched = []
     for body in runs:
@@ -258,6 +259,10 @@ def _story_card(rid: str, stats: dict) -> None:
         elif status == "running":
             lines.append("<div class='l mut'>opening six browsers in three countries…</div>")
     else:
+        logins = [e["event"]["data"]["reason"] for e in events if e.get("type") == "job_state" and (e["event"]["data"].get("reason") or "").startswith("login:")]
+        if logins:
+            badges.append("<span class='steel'>credentials vault</span>")
+            lines.append("<div class='l ok'>🔑 Steel injected the stored credentials from its vault, the anti-bot box was cleared in the browser, <b>signed in without a human</b>. The model never saw the password.</div>")
         if handoffs:
             last = handoffs[-1]
             state = last.get("state")

@@ -147,3 +147,13 @@ On the main page, under "Live: the agents at work on Steel", press **Run the Hel
 1. **Parse** (`helix-parse-*`): pricing, regulatory and security pages. The reveal flips the Monthly/Annual switch, opens Compare plans, selects every seat count, hovers Fair use limits, presses Show more, reads the ROI iframe and catches the page-load API call. Locally this finds all 18 planted lines plus the document and the API url; the counter reads about 23.
 2. **Three countries** (`helix-borders-*`): six browsers, CA sees CA$ prices and the GST line, DE sees € prices and the German cookie banner (declined automatically), US sees $.
 3. **Log in** (`helix-login-*`): the walker opens `/sign-in`, classifies the login wall, the card turns red. A teammate types the email and password in the embedded browser (the ALTCHA checkbox is part of the form), presses **I cleared it, resume**, and the walker crawls `/dashboard`, integrations, reports, settings and billing, recording the interior facts (seats used, bank connections, Beta and Coming soon badges, data region, card ending 4242) as interior observations. Billing and log-out links are observed, never pressed.
+
+## Autonomous login (no human)
+
+Store the test account once in Steel's credentials vault (the password is typed into a hidden terminal prompt, never into the repo):
+
+```bash
+STEEL_API_KEY=... npm run setup-credential -- --competitor helix-ledger --origin https://<words>.trycloudflare.com --username test@test.com --account trial1
+```
+
+The Helix demo button then launches the login run with `accountRef: trial1`. Steel injects the stored credentials into the sign-in form inside the browser, the walker ticks the ALTCHA box (it verifies itself in the browser), presses Sign in, and crawls the dashboard. The story card reads "Steel injected the stored credentials from its vault … signed in without a human". If the form is not filled or the wall stays, the walker falls back to the red human handoff card. The credential is bound to the exact origin, so store it again whenever the tunnel url changes.
