@@ -32,6 +32,7 @@ function observationId(
   competitor: string,
   url: string,
   vantage: Vantage,
+  source: Source,
   normalizedText: string,
 ): string {
   const input = [
@@ -39,6 +40,7 @@ function observationId(
     competitor,
     url,
     JSON.stringify(vantage),
+    source, // the same line seen by the fetch benchmark and by the browser are two sightings, both kept
     normalizedText,
   ].join("|");
   return createHash("sha256").update(input).digest("hex");
@@ -50,7 +52,7 @@ function observationId(
 export function createObservation(input: ObservationInput): Observation {
   const normalized = normalizeText(input.text);
   return {
-    id: observationId(input.runId, input.competitor, input.url, input.vantage, normalized),
+    id: observationId(input.runId, input.competitor, input.url, input.vantage, input.source, normalized),
     runId: input.runId,
     jobId: input.jobId,
     competitor: input.competitor,

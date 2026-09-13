@@ -81,8 +81,9 @@ export async function fetchBenchmark(params: {
     });
   }
 
-  // Parse into observations
-  const blocks = deduplicateNav(splitBlocks(rawResponse));
+  // Parse into observations. A fetch tool returns HTML; the fair comparison is its visible text, so strip
+  // scripts, styles and tags before splitting into blocks (segment C: the side-by-side needs this count).
+  const blocks = deduplicateNav(splitBlocks(htmlToText(rawResponse)));
   const observations: Observation[] = [];
 
   for (const block of blocks) {
@@ -102,7 +103,22 @@ export async function fetchBenchmark(params: {
     });
 
     observations.push(obs);
+    await params.sink.write({ type: "observation", data: obs });
   }
 
   return { observations, rawResponse, fetchedAt, stale, failed };
+}
+
+/** Visible text of an HTML document without a browser: drop script/style/noscript, break on block tags, decode common entities. */
+export function htmlToText(html: string): string {
+  if (!/<[a-z!][\s\S]*>/i.test(html)) return html;
+  return html
+    .replace(/<(script|style|noscript|template|svg)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<\/(p|div|section|article|li|ul|ol|h[1-6]|tr|td|th|br|hr|header|footer|nav|main|aside|blockquote|pre|table|form|label|option|button|a|span)>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/[ \t]+/g, " ");
 }
