@@ -12,7 +12,8 @@
     "test:steel": "vitest run test/steel",
     "test:steel:live": "vitest run --config vitest.live.config.ts test/steel",
     "setup-account": "tsx src/steel/setup-account.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "setup-credential": "tsx src/steel/setup-credential.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

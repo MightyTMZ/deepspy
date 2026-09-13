@@ -50,7 +50,7 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
     // C8: inject stored credentials for an account when a profile record names a competitor for it
     credentialNamespaceFor: (accountRef) => {
       const rec = loadProfiles().find((p) => p.accountRef === accountRef);
-      return rec ? credentialNamespace(rec.competitor, rec.accountRef) : undefined;
+      return rec?.credentialNamespace ?? (rec ? credentialNamespace(rec.competitor, rec.accountRef) : undefined);
     },
   });
   const pool = new SessionPool(adapter, {

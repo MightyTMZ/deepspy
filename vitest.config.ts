@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  resolve: { alias: { "@periscope/contracts": path.resolve(here, "packages/contracts/src/index.ts") } },
+  resolve: { alias: { "@periscope/contracts": path.resolve(here, "packages/contracts/src/index.ts"), "@periscope/knowledge": path.resolve(here, "packages/knowledge/src/index.ts") } },
   test: {
     include: ["test/**/*.test.ts", "src/**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/*.live.ts"],

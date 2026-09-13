@@ -5,7 +5,7 @@
 // The human types the password in the live view. Nothing here ever sees it.
 // Steel assigns the profile id at session create (persistProfile), and the profile turns READY after release.
 
-import { SteelAdapter, defaultVantage } from "./steel-adapter.js";
+import { SteelAdapter, defaultVantage, PROFILE_SETTLE_MS } from "./steel-adapter.js";
 import { saveProfile, waitUntilReady } from "./profiles.js";
 
 function arg(name: string, fallback?: string): string {
@@ -43,6 +43,8 @@ if (!signedIn) {
 }
 
 const profileId = handle.profileId;
+console.log(`Signed in. Waiting ${PROFILE_SETTLE_MS / 1000}s so Chrome flushes cookies before the profile snapshot...`);
+await handle.page.waitForTimeout(PROFILE_SETTLE_MS);
 await handle.release(); // Steel persists the profile on release
 saveProfile({ profileId, competitor, accountRef, homeCountry: country, signedInIndicator: indicator, createdAt: new Date().toISOString(), ready: false });
 console.log(`Profile ${profileId} recorded for ${competitor}/${accountRef}. Waiting for Steel to mark it READY...`);

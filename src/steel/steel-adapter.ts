@@ -11,6 +11,9 @@ import type { LeaseRequest, SessionHandle, Vantage } from "@periscope/contracts"
 
 const SESSION_TIMEOUT_MS = 14 * 60 * 1000;   // free plan cap is 15 minutes
 const AUTONOMOUS_CUTOFF_MS = 11 * 60 * 1000; // deadlineAt: work stops here, 3 minutes reserved for handoff and collection
+/** Chrome writes its cookie jar to disk lazily (about every 30 s). A profile snapshot taken before that flush has
+ *  localStorage but no cookies (observed Sept 13). Wait at least this long after the last login step before release. */
+export const PROFILE_SETTLE_MS = 40_000;
 
 export interface SteelAdapterOptions {
   apiKey: string;
@@ -175,8 +178,8 @@ export class SteelAdapter {
 
   /** Files the browser saved during the session. */
   async listFiles(sessionId: string): Promise<Array<{ path: string; size?: number }>> {
-    const r = (await this.steel.sessions.files.list(sessionId)) as unknown as { files?: Array<{ path: string; size?: number }> } | Array<{ path: string; size?: number }>;
-    return Array.isArray(r) ? r : (r.files ?? []);
+    const r = (await this.steel.sessions.files.list(sessionId)) as unknown as { data?: Array<{ path: string; size?: number }>; files?: Array<{ path: string; size?: number }> } | Array<{ path: string; size?: number }>;
+    return Array.isArray(r) ? r : (r.data ?? r.files ?? []);
   }
 
   /** Download every session file as one zip (bytes). */

@@ -3,7 +3,10 @@
     "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "outDir": "dist",
     "rootDir": ".",
     "strict": true,
@@ -14,8 +17,17 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "paths": {
-      "@periscope/contracts": ["./packages/contracts/src/index.ts"]
+      "@periscope/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@periscope/knowledge": [
+        "./packages/knowledge/src/index.ts"
+      ]
     }
   },
-  "include": ["src/**/*.ts", "packages/contracts/src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "packages/contracts/src/**/*.ts",
+    "packages/knowledge/src/**/*.ts"
+  ]
 }
