@@ -18,7 +18,8 @@ for (const runId of ids) {
   const byVantage: Record<string, number> = {};
   for (const o of obs) { const k = `${o.vantage.country ?? "-"}/${o.vantage.device}`; byVantage[k] = (byVantage[k] ?? 0) + 1; }
   console.log(`\n== ${runId} (${run.status}) ==`);
-  console.log(`observations ${obs.length} | surface ${obs.filter((o) => o.layer === "surface").length} | benchmark ${obs.filter((o) => o.source === "benchmark_fetch").length} | hidden ${hidden.length} | missedByFetch ${missed.length} | events ${storage.countEvents(runId)} | spend $${(storage.runSpendMicroUsd(runId) / 1e6).toFixed(2)}`);
+  const interior = obs.filter((o) => o.layer === "interior");
+  console.log(`observations ${obs.length} | surface ${obs.filter((o) => o.layer === "surface").length} | benchmark ${obs.filter((o) => o.source === "benchmark_fetch").length} | hidden ${hidden.length} | missedByFetch ${missed.length} | borders ${obs.filter((o) => o.layer === "borders").length} | interior ${interior.length} (${new Set(interior.map((o) => o.url)).size} screens) | events ${storage.countEvents(runId)} | handoffs ${storage.countEvents(runId, "handoff")} | spend $${(storage.runSpendMicroUsd(runId) / 1e6).toFixed(2)}`);
   console.log("hidden by action:", Object.entries(byLabel).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, v]) => `${k}=${v}`).join(", "));
   console.log("hidden by kind:  ", Object.entries(byKind).map(([k, v]) => `${k}=${v}`).join(", "));
   console.log("by vantage:      ", Object.entries(byVantage).map(([k, v]) => `${k}=${v}`).join(", "));
