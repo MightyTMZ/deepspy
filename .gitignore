@@ -5,3 +5,6 @@ data/
 .env.*
 !env.template
 *.local.json
+
+
+periscope-final-architecture.md
