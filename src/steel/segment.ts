@@ -49,7 +49,7 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
     apiKey,
     // Model-driven passes (reveal, walker) need Stagehand's extension inside the Steel session; setup and borders do not.
     extensionIdsFor: async (req) => {
-      if (!process.env.ANTHROPIC_API_KEY || req.purpose === "setup" || req.purpose === "borders") return [];
+      if (process.env.PERISCOPE_STAGEHAND !== "1" || !process.env.ANTHROPIC_API_KEY || req.purpose === "setup" || req.purpose === "borders") return [];
       const id = await ensureStagehandExtension(adapter.client);
       return id ? [id] : [];
     },

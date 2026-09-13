@@ -33,8 +33,13 @@ export async function createStagehand(
     },
   });
 
-  // Use the playwright-core page from the SessionHandle for direct DOM operations
-  const page = handle.page;
+  // Use the playwright-core page from the SessionHandle for direct DOM operations. Stagehand's init can close or
+  // replace a blank initial page, so re-resolve a live page from the same context after create.
+  let page: Page = handle.page;
+  if (page.isClosed()) {
+    const context = handle.page.context();
+    page = context.pages().find((p) => !p.isClosed()) ?? (await context.newPage());
+  }
 
   return {
     stagehand,

@@ -42,13 +42,14 @@ export async function runBorders(
       });
 
       try {
-        const useModel = Boolean(process.env.ANTHROPIC_API_KEY);
-        const sh = useModel ? await createStagehand(handle) : undefined;
-        const page = sh?.page ?? handle.page;
+        const useModel = process.env.PERISCOPE_STAGEHAND === "1" && Boolean(process.env.ANTHROPIC_API_KEY); // opt in: Stagehand on Steel attaches (extension) but its page handling is not stable yet
+        const page = handle.page;
+        let sh: Awaited<ReturnType<typeof createStagehand>> | undefined;
 
         try {
           await page.goto(config.url, { waitUntil: "load", timeout: 60_000 });
           await page.waitForTimeout(1000);
+          if (useModel) sh = await createStagehand(handle).catch((e: Error) => { console.warn(`[stagehand] unavailable, continuing without a model: ${e.message.split(String.fromCharCode(10))[0]}`); return undefined; });
 
           const det = await revealDeterministic({
             runId: config.runId,
