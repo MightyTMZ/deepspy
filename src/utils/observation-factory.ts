@@ -24,13 +24,18 @@ export interface ObservationInput {
   viewerUrl?: string;
 }
 
+// The id is scoped to the run on purpose: identical text seen in a later run must be recorded again,
+// otherwise a run-to-run diff has nothing to compare (Storage rejects a repeated id as a duplicate).
+// Within one run the id still deduplicates the same line seen twice from the same vantage.
 function observationId(
+  runId: string,
   competitor: string,
   url: string,
   vantage: Vantage,
   normalizedText: string,
 ): string {
   const input = [
+    runId,
     competitor,
     url,
     JSON.stringify(vantage),
@@ -45,7 +50,7 @@ function observationId(
 export function createObservation(input: ObservationInput): Observation {
   const normalized = normalizeText(input.text);
   return {
-    id: observationId(input.competitor, input.url, input.vantage, normalized),
+    id: observationId(input.runId, input.competitor, input.url, input.vantage, normalized),
     runId: input.runId,
     jobId: input.jobId,
     competitor: input.competitor,
