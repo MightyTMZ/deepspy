@@ -5,6 +5,7 @@ import type { Event, EventSink, HandoffEvent, Vantage } from "@periscope/contrac
 import { Coordinator, type Job, type JobType } from "../coordinator.js";
 import type { SteelSegment } from "../steel/segment.js";
 import { StorageSink } from "./storage-sink.js";
+import type { LiveSessions } from "./live-sessions.js";
 
 export interface RunSpec {
   runId: string;
@@ -25,6 +26,7 @@ export interface LaunchDeps {
   storage: Storage;
   segment: Pick<SteelSegment, "acquireSession" | "steel" | "onWall" | "waitForResolution">;
   router: RouterSink;
+  live?: LiveSessions;
   onEvent?: (e: Event) => void;
   onHandoff?: (h: HandoffEvent) => void;
 }
@@ -88,7 +90,7 @@ export function launchRun(spec: RunSpec, deps: LaunchDeps): LaunchHandle {
 
   const coordinator = new Coordinator({
     runId: spec.runId, runBudgetUsd: capUsd, jobBudgetUsd: Math.min(capUsd, 4), runStartedAt: new Date().toISOString(),
-    sink: tee, acquireSession: deps.segment.acquireSession, steel: deps.segment.steel,
+    sink: tee, acquireSession: deps.live ? deps.live.wrap(spec.runId, spec.competitor, deps.segment.acquireSession) : deps.segment.acquireSession, steel: deps.segment.steel,
     onWall: (wall, handle) => deps.segment.onWall(wall, handle),
     waitForResolution: deps.segment.waitForResolution,
   });

@@ -14,6 +14,7 @@ Section 8.3 of the architecture. Start it with `npm run api` (port 4747, `PERISC
 | `GET /runs/:id` | run record with `spentUsd` and `capUsd` in dollars, jobs with states and reasons, counts, counters | |
 | `POST /runs/:id/cancel` | cancel queued jobs; running jobs finish their current page | |
 | `GET /runs/:id/events` | Server-sent events with ordered `id:` lines; reconnect with `Last-Event-ID`; ends with `event: end` once the run is terminal. `?format=json&after=N` returns the same as JSON | |
+| `GET /sessions`, `GET /runs/:id/sessions` | live Steel sessions right now: `playerUrl` (embeddable WebRTC live view, no auth), `viewerUrl`, purpose, vantage, current page url, run and competitor, `pendingWall` | |
 | `GET /handoffs` | pending walls waiting for a human | |
 | `POST /jobs/:id/takeover` | the live view url and the generation to resume with | |
 | `POST /jobs/:id/resume` | forwarded to the Steel segment; 409 with a reason when the generation is stale | `{generation?}` |

@@ -4,6 +4,7 @@ import path from "node:path";
 import { Storage } from "@periscope/knowledge";
 import { createSteelSegment } from "../steel/segment.js";
 import { RouterSink, launchRun } from "../integration/launch-run.js";
+import { LiveSessions } from "../integration/live-sessions.js";
 import { createApi } from "./server.js";
 import { anthropicComplete, extractFeatures } from "../intel/extract.js";
 
@@ -15,6 +16,7 @@ const hasSteel = Boolean(process.env.STEEL_API_KEY);
 const complete = process.env.ANTHROPIC_API_KEY ? anthropicComplete() : undefined;
 const autoExtract = Boolean(complete) && process.env.PERISCOPE_AUTO_EXTRACT !== "0";
 const router = new RouterSink();
+const live = new LiveSessions();
 const segment = hasSteel ? createSteelSegment({ sink: router }) : undefined;
 if (segment) {
   const released = await segment.reconcile();
@@ -24,9 +26,10 @@ if (segment) {
 const api = await createApi({
   storage,
   complete,
+  liveSessions: segment ? (runId) => live.view(segment.pool.activeSessions(), runId) : undefined,
   segment: segment ? { resume: segment.resume, acquireSession: segment.acquireSession, profileStatus: (id) => segment.adapter.profileStatus(id) } : undefined,
   launch: segment ? (spec) => launchRun(spec, {
-    storage, segment, router,
+    storage, segment, router, live,
     onEvent: (e) => { if (e.type === "job_state") console.log(`[${spec.runId}] job ${e.data.jobId.slice(0, 8)} ${e.data.state}${e.data.reason ? " (" + e.data.reason + ")" : ""}`); if (e.type === "counter") console.log(`[${spec.runId}] ${e.data.url} missed by fetch: ${e.data.missed}`); },
     onHandoff: (h) => { api.recordHandoff(h); console.log(`[${spec.runId}] handoff ${h.state} ${h.wall} job ${h.jobId.slice(0, 8)} -> ${h.viewerUrl}`); },
   }) : undefined,
