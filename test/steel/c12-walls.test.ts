@@ -16,6 +16,7 @@ const cases: Array<[string, string | null]> = [
   ["payment-wall.html", "payment"],
   ["consent-wall.html", "consent"],
   ["settings-page.html", null],
+  ["kyc-marketing.html", null], // product copy about identity verification with nothing to fill in is not a wall
 ];
 
 describe("C12 wall classifier", () => {
