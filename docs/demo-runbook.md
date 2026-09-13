@@ -54,6 +54,8 @@ Then the walker, which pauses on any wall, notifies, and resumes when a human cl
 MSYS_NO_PATHCONV=1 npx tsx src/run.ts --competitor <name> --url <base url> --jobs walker --start <first page after login> --profile <profileId> --account <ref> --run-id demo-login-1
 ```
 
+Rehearsed overnight without an account: a walker started on a login page classified the wall, tried Steel's solver, handed off with the live view, resumed on `POST .../resume`, and marked the job partial when the timer expired (`live-wall-github-1`, 223 s). For a rehearsal set `PERISCOPE_HUMAN_TIMEOUT_MS=150000` so the timer is 2.5 minutes instead of 10.
+
 Resume after a wall from another terminal:
 
 ```bash
