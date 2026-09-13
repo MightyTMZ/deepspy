@@ -106,8 +106,10 @@ def live():
             with cols[i % len(cols)]:
                 v = s.get("vantage") or {}
                 tags = [f"<span class='tag'>{s.get('purpose') or 'session'}</span>", f"<span class='tag'>{v.get('country') or 'home'} · {v.get('device', 'desktop')}</span>"]
-                if v.get("authenticated"):
+                if s.get("profileId") or s.get("accountRef"):
                     tags.append("<span class='tag green'>signed in</span>")
+                elif s.get("purpose") == "walker":
+                    tags.append("<span class='tag'>walker, no account yet</span>")
                 if s.get("pendingWall"):
                     tags.append(f"<span class='tag red'>wall: {s['pendingWall']} — needs you</span>")
                 st.markdown(f"<div class='cap'>{s.get('competitor') or ''} {''.join(tags)}<br>{(s.get('currentUrl') or '')[:90]}</div>", unsafe_allow_html=True)
