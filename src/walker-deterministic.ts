@@ -88,37 +88,46 @@ async function linksOn(page: Page, root: string): Promise<Array<{ href: string; 
  * presses the form's own submit button, and reports whether the password field is gone. No password ever passes
  * through this code.
  */
-export async function tryAutoLogin(page: Page): Promise<boolean> {
+export async function tryAutoLogin(page: Page): Promise<{ ok: boolean; reason: string }> {
   const pw = page.locator("input[type=password]").first();
-  try { await pw.waitFor({ state: "visible", timeout: 5000 }); } catch { return false; }
+  try { await pw.waitFor({ state: "visible", timeout: 5000 }); } catch { return { ok: false, reason: "no password field" }; }
   let filled = false;
-  for (let i = 0; i < 12 && !filled; i++) {
+  for (let i = 0; i < 20 && !filled; i++) {
     filled = ((await pw.inputValue().catch(() => "")) ?? "").length > 0;
     if (!filled) await page.waitForTimeout(500);
   }
-  if (!filled) return false;
+  if (!filled) return { ok: false, reason: "Steel did not inject the stored credentials within 10 s (is the credential bound to this exact origin?)" };
   await page.waitForTimeout(1500); // let the anti-bot widget finish initialising before it is ticked
   const box = page.locator("altcha-widget input[type=checkbox], #altcha-placeholder input[type=checkbox], input[type=checkbox][name*=captcha i], input[type=checkbox][id*=altcha i]").first();
+  let boxSeen = false;
   if (await box.count()) {
-    await box.click({ timeout: 3000, force: true }).catch(() => undefined);
-    for (let i = 0; i < 30; i++) {
-      const ok = await page.evaluate(() => {
-        const token = document.querySelector("input[name=altcha]") as HTMLInputElement | null;
-        const state = document.querySelector("div.altcha")?.getAttribute("data-state") ?? document.querySelector("altcha-widget")?.getAttribute("data-state");
-        return Boolean(token?.value) || state === "verified";
-      }).catch(() => false);
-      if (ok) break;
-      await page.waitForTimeout(500);
+    boxSeen = true;
+    let verified = false;
+    for (let attempt = 0; attempt < 2 && !verified; attempt++) {
+      await box.click({ timeout: 3000, force: true }).catch(() => undefined);
+      for (let i = 0; i < 30 && !verified; i++) {
+        verified = await page.evaluate(() => {
+          const token = document.querySelector("input[name=altcha]") as HTMLInputElement | null;
+          const state = document.querySelector("div.altcha")?.getAttribute("data-state") ?? document.querySelector("altcha-widget")?.getAttribute("data-state");
+          return Boolean(token?.value) || state === "verified";
+        }).catch(() => false);
+        if (!verified) await page.waitForTimeout(500);
+      }
     }
+    if (!verified) return { ok: false, reason: "the anti-bot box did not verify in the browser" };
   }
   const submit = page.locator("form button[type=submit], form input[type=submit]").first();
-  if (!(await submit.count())) return false;
+  if (!(await submit.count())) return { ok: false, reason: "no submit button in the form" };
   const before = page.url();
   await submit.click({ timeout: 3000 }).catch(() => undefined);
-  await page.waitForURL((u) => u.toString() !== before, { timeout: 15_000 }).catch(() => undefined);
+  await page.waitForURL((u) => u.toString() !== before, { timeout: 20_000 }).catch(() => undefined);
   await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => undefined);
   await page.waitForTimeout(800);
-  return (await page.locator("input[type=password]").count()) === 0;
+  if ((await page.locator("input[type=password]").count()) > 0) {
+    const err = (await page.locator("body").innerText().catch(() => "")).match(/invalid email|anti-bot|challenge failed|try again/i)?.[0];
+    return { ok: false, reason: err ? `the site answered "${err}"` : "the sign-in form is still on screen after submit" };
+  }
+  return { ok: true, reason: boxSeen ? "credentials injected by Steel, anti-bot box verified in the browser, form submitted" : "credentials injected by Steel, form submitted" };
 }
 
 export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise<WalkerResult> {
@@ -178,12 +187,17 @@ export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise
     if (!canonical(page.url()).startsWith(root)) continue; // redirected off-site
 
     let wall = await wallOn(page, cfg, generation);
-    if (wall && wall.wall === "login" && cfg.autoLogin && (await tryAutoLogin(page))) {
-      wall = await wallOn(page, cfg, generation);
-      if (!wall) {
-        await cfg.sink.write({ type: "job_state", data: { jobId: cfg.jobId, state: "running", reason: "login: Steel injected the stored credentials from its vault, the anti-bot box was cleared in the browser, signed in without a human" } });
-        visitedUrls.add(canonical(page.url()));
-        next.label = "signed in";
+    if (wall && wall.wall === "login" && cfg.autoLogin) {
+      const attempt = await tryAutoLogin(page);
+      if (attempt.ok) {
+        wall = await wallOn(page, cfg, generation);
+        if (!wall) {
+          await cfg.sink.write({ type: "job_state", data: { jobId: cfg.jobId, state: "running", reason: `login: ${attempt.reason}, signed in without a human` } });
+          visitedUrls.add(canonical(page.url()));
+          next.label = "signed in";
+        }
+      } else {
+        await cfg.sink.write({ type: "job_state", data: { jobId: cfg.jobId, state: "running", reason: `login attempt: ${attempt.reason}; handing off to a human` } });
       }
     }
     if (wall) {
