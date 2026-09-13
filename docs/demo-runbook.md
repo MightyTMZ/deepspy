@@ -69,3 +69,19 @@ Run beat 1 or 2 again with a new run id, then:
 ```bash
 npx tsx scripts/diff-runs.ts demo-spotify-1 demo-spotify-2
 ```
+
+## Through the API instead of the CLI
+
+```bash
+STEEL_API_KEY=... npm run api
+```
+
+```bash
+curl -s -X POST http://localhost:4747/runs -H "content-type: application/json" -H "idempotency-key: demo-1" -d '{"competitor":"ornn","url":"https://ornn.com","pages":["/regulatory"],"jobs":["surface","benchmark","reveal"],"runId":"demo-api-1"}'
+```
+
+```bash
+curl -s -N http://localhost:4747/runs/demo-api-1/events
+```
+
+Then `GET /runs/demo-api-1/coverage`, `/borders`, `/prices`, `/diff?from=<earlier run>`; a wall appears at `GET /handoffs` and clears with `POST /jobs/<id>/resume`. Full contract: `docs/api.md`.

@@ -31,6 +31,7 @@ cp env.template .env          # fill STEEL_API_KEY; ANTHROPIC_API_KEY is optiona
 npx pnpm@10 typecheck
 npx pnpm@10 vitest run        # offline: fixtures, pool, handoff, intel, storage sink
 npm run test:steel:live       # live against Steel, needs STEEL_API_KEY
+npm run api                   # HTTP API on :4747, read-only without STEEL_API_KEY; contract in docs/api.md
 ```
 
 ## Running the pipeline end to end
