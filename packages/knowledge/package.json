@@ -1,0 +1,37 @@
+{
+  "name": "@periscope/knowledge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Layer 5: SQLite system of record, artifacts, and the Qdrant/MiniLM corpus",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "tsx src/cli/migrate.ts",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.7.6",
+    "@periscope/contracts": "workspace:*",
+    "@qdrant/js-client-rest": "^1.15.1",
+    "better-sqlite3": "^12.11.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.19.9",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.9"
+  }
+}
