@@ -1,6 +1,6 @@
 # Overnight report, Sept 13 (Fahad's Claude session, segment C)
 
-Branch: `fahad/overnight-c-completion`, 27 small commits on top of `main`. Open the PR at
+Branch: `fahad/overnight-c-completion`, 29 small commits on top of `main`. Open the PR at
 https://github.com/MightyTMZ/periscope/compare/main...fahad/overnight-c-completion
 
 Demo commands, in order, are in `docs/demo-runbook.md`. Everything below ran live against Steel; no Claude key was available, so the Stagehand layer is untested and every result here comes from the deterministic reveal.
@@ -35,7 +35,7 @@ Test totals on the branch: 54 offline passed, 7 live passed (C1, C3, C4, C5, C8,
 | Side by side, Notion pricing | `live-reveal-notion-1` | 214 observations, 46 hidden, **44 missed by fetch** (toggle, compare, FAQ accordions) | about 90 s |
 | Borders, Spotify premium, CA/US/DE, desktop and mobile | `live-borders-spotify-3` | CA **$13.99**, US **$12.99 with Hulu**, DE **12,99 €**; German cookie wall declined automatically; 6 sessions in parallel | 24 s |
 | Run to run diff, Spotify run 1 vs run 3 | `scripts/diff-runs.ts` | 715 unchanged, 18 added, 34 removed (scroll-position noise, no price change in 30 minutes) | instant |
-| **Model-free crawl of ornn.com** (no login, shows the walker on a real site) | `live-walk-ornn-2` | 11 screens, **328 interior lines** recorded, blocked links observed not visited; then the home page tripped the `kyc` rule (Ornn sells identity verification) and the job waited the full 10-minute timer before finishing `partial`. Rule tightened afterwards, see finding 11 | 698 s |
+| **Model-free crawl of ornn.com** (no login, shows the walker on a real site) | `live-walk-ornn-2` | 11 screens, **328 interior lines** recorded, blocked links observed not visited; then the home page tripped the `kyc` rule (Ornn sells identity verification) and the job waited the full 10-minute timer before finishing `partial`. Rule tightened afterwards, see finding 11. Rerun `live-walk-ornn-3`: **17 screens, 471 interior lines, completed, no false wall** | 698 s, then 133 s |
 | **Wall rehearsal (C20 without the human)**, walker started on github.com/login with a 150 s human timer | `live-wall-github-1` | wall classified, Steel solver tried first and timed out after 30 s, handoff `awaiting_human` with live view, `POST /jobs/:id/resume` returned ok and the walk resumed in the same session, wall again, timer expired, handoff `abandoned`, job `partial` with the reason. 13 events in SQLite | 223 s |
 
 Print any of them again with `npx tsx scripts/inspect-run.ts <runId>`, `npx tsx scripts/borders-grid.ts <runId>`, `npx tsx scripts/diff-runs.ts <fromRunId> <toRunId>`.

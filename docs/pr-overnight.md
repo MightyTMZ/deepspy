@@ -20,7 +20,7 @@ Segment C is complete and every demo beat runs live on Steel without a Claude ke
 | Side by side, notion.com/pricing | `live-reveal-notion-1` | 44 missed by fetch |
 | Borders, spotify.com/premium, CA/US/DE × desktop/mobile | `live-borders-spotify-3` | CA $13.99, US $12.99 + Hulu, DE 12,99 €, 24 s |
 | Wall handoff and resume, github.com/login | `live-wall-github-1` | classify → Steel solver → awaiting_human → resume ok → abandoned on timer → partial, 223 s |
-| Model-free crawl, ornn.com | `live-walk-ornn-2` | 11 screens, 328 interior lines |
+| Model-free crawl, ornn.com | `live-walk-ornn-3` | 17 screens, 471 interior lines, completed in 133 s |
 
 ## Tests
 
