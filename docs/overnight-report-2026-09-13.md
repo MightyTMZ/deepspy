@@ -1,6 +1,6 @@
 # Overnight report, Sept 13 (Fahad's Claude session, segment C)
 
-Branch: `fahad/overnight-c-completion`, 18 small commits on top of `main`. Open the PR at
+Branch: `fahad/overnight-c-completion`, 25 small commits on top of `main`. Open the PR at
 https://github.com/MightyTMZ/periscope/compare/main...fahad/overnight-c-completion
 
 Demo commands, in order, are in `docs/demo-runbook.md`. Everything below ran live against Steel; no Claude key was available, so the Stagehand layer is untested and every result here comes from the deterministic reveal.
@@ -22,8 +22,10 @@ Demo commands, in order, are in `docs/demo-runbook.md`. Everything below ran liv
 | **Deterministic reveal** (`src/reveal-deterministic.ts`): consent, tabs and accordions incl. Framer text tabs, selects, toggles, show more and infinite scroll, hover, modals, iframes, documents, hidden JSON calls; line-level diff against the surface baseline; URL-change guard; blocklist; counter event | Implemented, runs before Stagehand and alone when no model key | 12 fixture tests (B4, B7, B8, B9, B10, B11, B12, B13, B14, B20, B28, counter) |
 | **Borders grid** (`src/intel/borders-grid.ts`): per vantage and per country, unique lines, price lines, country and device difference flags | Implemented | 4 unit tests, live Spotify below |
 | **Run diff and coverage** (`src/intel/diff.ts`, `src/intel/coverage.ts`) | Implemented | 4 unit tests, `scripts/diff-runs.ts` |
+| **Model-free walker** (`src/walker-deterministic.ts`): same-origin crawl behind the login, one interior observation per visible line per screen, blocked links (billing, log out, pay ...) observed but never visited, wall check after every navigation, checkpoint every 5 screens; the coordinator uses it when no model key is set | Implemented | fixture site test; live wall rehearsal below |
+| **Fetch benchmark stores its sightings** as visible text (was raw HTML, never written) | Fixed in Tom's `src/benchmark.ts` | 2 tests; Ornn run shows benchmark 26 |
 
-Test totals on the branch: 51 offline passed, 7 live passed (C1, C3, C4, C5, C8, C19, C22), 1 todo (C20, needs a human).
+Test totals on the branch: 54 offline passed, 7 live passed (C1, C3, C4, C5, C8, C19, C22), 1 todo (C20 with a real human; the loop itself is rehearsed live below).
 
 ## Live results that are the demo
 
@@ -33,6 +35,7 @@ Test totals on the branch: 51 offline passed, 7 live passed (C1, C3, C4, C5, C8,
 | Side by side, Notion pricing | `live-reveal-notion-1` | 214 observations, 46 hidden, **44 missed by fetch** (toggle, compare, FAQ accordions) | about 90 s |
 | Borders, Spotify premium, CA/US/DE, desktop and mobile | `live-borders-spotify-3` | CA **$13.99**, US **$12.99 with Hulu**, DE **12,99 €**; German cookie wall declined automatically; 6 sessions in parallel | 24 s |
 | Run to run diff, Spotify run 1 vs run 3 | `scripts/diff-runs.ts` | 715 unchanged, 18 added, 34 removed (scroll-position noise, no price change in 30 minutes) | instant |
+| **Wall rehearsal (C20 without the human)**, walker started on github.com/login with a 150 s human timer | `live-wall-github-1` | wall classified, Steel solver tried first and timed out after 30 s, handoff `awaiting_human` with live view, `POST /jobs/:id/resume` returned ok and the walk resumed in the same session, wall again, timer expired, handoff `abandoned`, job `partial` with the reason. 13 events in SQLite | 223 s |
 
 Print any of them again with `npx tsx scripts/inspect-run.ts <runId>`, `npx tsx scripts/borders-grid.ts <runId>`, `npx tsx scripts/diff-runs.ts <fromRunId> <toRunId>`.
 
