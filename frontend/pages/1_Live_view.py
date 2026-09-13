@@ -129,7 +129,11 @@ def live():
             return
         run = api_get(f"/runs/{run_id}")
         counters = run.get("counters") or []
-        missed = sum(c["missed"] for c in counters if isinstance(c.get("missed"), int))
+        by_url = {}
+        for c in counters:
+            if isinstance(c.get("missed"), int):
+                by_url[c.get("url")] = max(by_url.get(c.get("url"), 0), c["missed"])  # borders emits one counter per vantage; count each page once
+        missed = sum(by_url.values())
         m1, m2, m3 = st.columns(3)
         m1.metric("Missed by fetch", missed)
         m2.metric("Observations", (run.get("counts") or {}).get("observations", 0))
