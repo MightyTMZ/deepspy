@@ -26,18 +26,22 @@ Full spec with test ids: `docs/periscope-final-architecture.md`.
 ## Running
 
 ```bash
-npm install
-cp .env.example .env
-npm run test:steel          # fixture tests, no keys needed
-npm run test:live           # live tests against Steel, needs STEEL_API_KEY
-npm run setup-account -- --competitor <name> --url <login url>
+npx pnpm@10 install
+cp env.template .env          # fill STEEL_API_KEY; ANTHROPIC_API_KEY is optional
+npx pnpm@10 typecheck
+npx pnpm@10 vitest run        # offline: fixtures, pool, handoff, intel, storage sink
+npm run test:steel:live       # live against Steel, needs STEEL_API_KEY
 ```
 
 ## Running the pipeline end to end
 
+Without `ANTHROPIC_API_KEY` every job runs the deterministic Playwright layer (reveal strategies, link walker). With it, Stagehand runs on top. Commands for the three demo beats are in `docs/demo-runbook.md`.
+
 ```bash
-MSYS_NO_PATHCONV=1 STEEL_API_KEY=... ANTHROPIC_API_KEY=... npx tsx src/run.ts --competitor ornn --url https://ornn.com --pages /regulatory,/product --jobs surface,benchmark,reveal --countries CA,US,DE --cap 12
+MSYS_NO_PATHCONV=1 STEEL_API_KEY=... npx tsx src/run.ts --competitor ornn --url https://ornn.com --pages /regulatory --jobs surface,benchmark,reveal --countries CA,US,DE --run-id demo-1
+npx tsx scripts/inspect-run.ts demo-1
+npx tsx scripts/borders-grid.ts demo-1
+npx tsx scripts/diff-runs.ts demo-1 demo-2
 ```
 
-`MSYS_NO_PATHCONV=1` matters on Windows Git Bash: without it, `--pages /regulatory` reaches Node as `C:/Program Files/Git/regulatory`.
-A handoff prints a live-view URL; resolve it there, then `curl -X POST http://localhost:4747/jobs/<jobId>/resume`.
+Environment knobs: `STEEL_CAPTCHA=1` turns on Steel's solver, `PERISCOPE_HUMAN_TIMEOUT_MS` shortens the human timer for rehearsals, `PERISCOPE_WEBHOOK_URL` mirrors handoff notifications, `STAGEHAND_MODEL` overrides the model name.
