@@ -71,9 +71,12 @@ export class HandoffController {
     const p = this.pending.get(jobId);
     if (!p) return { ok: false, reason: "no handoff pending" };
     if (p.generation !== generation) return { ok: false, reason: "stale generation" };
-    if (p.wall.wall === "payment") {
+    // Payment and authentication walls require a meaningful post-human check.
+    // CAPTCHA/consent pages may retain their challenge markup after the solver
+    // or the human has cleared the challenge, so do not reject those on stale DOM.
+    if (p.wall.wall === "payment" || p.wall.wall === "login" || p.wall.wall === "2fa" || p.wall.wall === "email_code") {
       const still = await classifyFromDom(p.handle.page);
-      if (still.wall === "payment") return { ok: false, reason: "payment field still visible" };
+      if (p.wall.wall === "payment" && still.wall === "payment") return { ok: false, reason: "payment field still visible" };
     }
     if (p.wall.wall === "login" || p.wall.wall === "2fa" || p.wall.wall === "email_code") {
       const indicator = this.opts.signedInIndicator ? await this.opts.signedInIndicator(p.handle) : null;
@@ -99,11 +102,20 @@ export class HandoffController {
   }
 
   isPending(jobId: string): boolean { return this.pending.has(jobId); }
+  async cancel(jobId: string): Promise<void> {
+    const p = this.pending.get(jobId);
+    if (!p) return;
+    clearTimeout(p.timer);
+    this.pending.delete(jobId);
+    await this.sink.write({ type: "handoff", data: { jobId, viewerUrl: p.handle.viewerUrl, wall: p.wall.wall, generation: p.generation, state: "abandoned" } });
+    for (const waiter of p.waiters) waiter("abandoned");
+  }
   pendingWall(jobId: string): WallKind | undefined { return this.pending.get(jobId)?.wall.wall; }
 
   private async abandon(jobId: string, reason: string): Promise<void> {
     const p = this.pending.get(jobId);
     if (!p) return;
+    clearTimeout(p.timer);
     this.pending.delete(jobId);
     await this.sink.write({ type: "handoff", data: { jobId, viewerUrl: p.handle.viewerUrl, wall: p.wall.wall, generation: p.generation, state: "abandoned" } });
     await this.driver.fail(jobId, "partial", reason);

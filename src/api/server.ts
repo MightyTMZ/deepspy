@@ -14,6 +14,12 @@ import { extractFeatures, summarizeDiff, type Complete } from "../intel/extract.
 import { loadProfiles, profileFor, saveProfile, waitUntilReady } from "../steel/profiles.js";
 import type { LaunchHandle, RunSpec } from "../integration/launch-run.js";
 import type { LiveSessionView } from "../integration/live-sessions.js";
+import { comparisonMatrix } from "../intel/matrix.js";
+import { meteredCompletion } from "../intel/metered-completion.js";
+import { ArtifactStore } from "@periscope/knowledge";
+import { evidenceRoot } from "../integration/evidence.js";
+import type { Corpus } from "@periscope/knowledge";
+import { research } from "../intel/research.js";
 
 /** What the API needs from the Steel segment. Narrow so tests can fake it. */
 export interface ApiSegment {
@@ -24,6 +30,7 @@ export interface ApiSegment {
 
 export interface ApiOptions {
   storage: Storage;
+  corpus?: Corpus;
   segment?: ApiSegment;
   launch?: (spec: RunSpec) => LaunchHandle;
   port?: number;                 // default PERISCOPE_API_PORT or 4747; 0 picks a free port
@@ -51,6 +58,7 @@ type Handler = (c: Ctx) => Promise<void> | void;
 
 export function createApi(opts: ApiOptions): Promise<Api> {
   const { storage } = opts;
+  const artifacts = new ArtifactStore({ storage, root: evidenceRoot() });
   const runs = new Map<string, LaunchHandle>();
   const pending = new Map<string, HandoffEvent>();
   const setups = new Map<string, AccountSetup>();
@@ -187,7 +195,7 @@ export function createApi(opts: ApiOptions): Promise<Api> {
       for (const e of batch) { c.res.write(`id: ${e.eventId}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`); last = e.eventId; }
       const run = storage.getRun(c.params.id);
       const terminal = run && ["completed", "failed", "cancelled", "partial"].includes(run.status) && !runs.has(c.params.id);
-      if (terminal) { batch = storage.readEventsAfter(c.params.id, last, 200); for (const e of batch) { c.res.write(`id: ${e.eventId}\nevent: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`); last = e.eventId; } c.res.write("event: end\ndata: {}\n\n"); c.res.end(); return; }
+      if (terminal && batch.length < 200) { c.res.write("event: end\ndata: {}\n\n"); c.res.end(); return; }
       timer = setTimeout(tick, 500);
     };
     let timer = setTimeout(tick, 0);
@@ -224,6 +232,18 @@ export function createApi(opts: ApiOptions): Promise<Api> {
   });
 
   /* ---------------- intelligence ---------------- */
+  route("POST", "/runs/:id/research", async (c) => {
+    if (!runOr404(c)) return;
+    const body = await readBody(c.req);
+    if (typeof body.query !== "string" || !body.query.trim() || body.query.length > 2000) return json(c.res, 400, { ok: false, reason: "query must contain 1 to 2000 characters" });
+    json(c.res, 200, { ok: true, ...await research(storage, c.params.id, body.query.trim(), opts.corpus, opts.complete) });
+  });
+  route("GET", "/matrix", (c) => {
+    const ids = (c.url.searchParams.get("runs") ?? "").split(",").filter(Boolean);
+    if (!ids.length || ids.length > 20) return json(c.res, 400, { ok: false, reason: "Select 1 to 20 run ids with ?runs=id1,id2" });
+    if (ids.some((id) => !storage.getRun(id))) return json(c.res, 404, { ok: false, reason: "Selected run not found" });
+    json(c.res, 200, { ok: true, ...comparisonMatrix(storage, ids) });
+  });
   route("GET", "/runs/:id/coverage", (c) => {
     if (!runOr404(c)) return;
     const obs = storage.getObservationsByRun(c.params.id);
@@ -257,7 +277,7 @@ export function createApi(opts: ApiOptions): Promise<Api> {
     const competitors = b.competitor ? [String(b.competitor)] : [...new Set(storage.getJobsByRun(c.params.id).map((j) => j.competitor).filter((x): x is string => Boolean(x)))];
     const results = [];
     for (const competitor of competitors) {
-      const r = await extractFeatures({ storage, runId: c.params.id, competitor, complete: opts.complete, category: b.category as string | undefined });
+      const r = await extractFeatures({ storage, runId: c.params.id, competitor, complete: meteredCompletion(storage, c.params.id, opts.complete), category: b.category as string | undefined });
       results.push({ competitor, rows: r.rows.length, rejected: r.rejected, findings: r.findings.length, tokensIn: r.tokensIn, tokensOut: r.tokensOut });
     }
     json(c.res, 200, { ok: true, runId: c.params.id, extracted: results, ...matrixView(c.params.id) });
@@ -269,23 +289,28 @@ export function createApi(opts: ApiOptions): Promise<Api> {
     if (!storage.getRun(from)) return json(c.res, 404, { ok: false, reason: `run ${from} not found` });
     const diff = diffRuns(from, storage.getObservationsByRun(from), c.params.id, storage.getObservationsByRun(c.params.id));
     const wantSummary = c.url.searchParams.get("summary") === "1";
-    const summary = wantSummary && opts.complete ? (await summarizeDiff(diff, opts.complete)).bullets : wantSummary ? ["no model key configured; set ANTHROPIC_API_KEY for a written summary"] : undefined;
+    const summary = wantSummary && opts.complete ? (await summarizeDiff(diff, meteredCompletion(storage, c.params.id, opts.complete))).bullets : wantSummary ? ["no model key configured; set ANTHROPIC_API_KEY for a written summary"] : undefined;
     json(c.res, 200, { ok: true, ...diff, summary });
   });
 
   /* ---------------- evidence ---------------- */
-  route("GET", "/findings/:id", (c) => {
+  route("GET", "/findings/:id", async (c) => {
     const f = storage.getFinding(c.params.id);
     if (!f) return json(c.res, 404, { ok: false, reason: "finding not found" });
     const observations = f.observationIds.map((id) => storage.getObservation(id)).filter((o): o is NonNullable<typeof o> => Boolean(o));
-    json(c.res, 200, { ok: true, finding: f, observations, artifacts: observations.filter((o) => o.screenshotPath).map((o) => ({ observationId: o.id, path: o.screenshotPath, exists: existsSync(o.screenshotPath!) })), unresolved: f.observationIds.length - observations.length });
+    const linked = observations.flatMap((o) => storage.artifactsForObservation(o.id).map((a) => ({ ...a, observationId: o.id })));
+    const legacy = observations.filter((o) => o.screenshotPath).map((o) => ({ observationId: o.id, path: o.screenshotPath!, exists: existsSync(o.screenshotPath!) }));
+    const evidence = [...legacy, ...await Promise.all(linked.map(async (a) => ({ ...a, url: `/artifacts/${a.id}`, exists: await artifacts.resolve(a.id).then(() => true, () => false) })))]
+      .filter((a, i, all) => all.findIndex((x) => x.observationId === a.observationId && (x as { id?: string }).id === (a as { id?: string }).id) === i);
+    json(c.res, 200, { ok: true, finding: f, observations, artifacts: evidence, unresolved: f.observationIds.length - observations.length });
   });
-  route("GET", "/artifacts/:id", (c) => {
+  route("GET", "/artifacts/:id", async (c) => {
     const a = storage.getArtifact(c.params.id);
     if (!a) return json(c.res, 404, { ok: false, reason: "artifact not found" });
-    if (c.url.searchParams.get("meta") === "1" || !existsSync(a.path)) return json(c.res, existsSync(a.path) ? 200 : 410, { ok: existsSync(a.path), artifact: a });
+    const file = await artifacts.resolve(a.id).catch(() => null);
+    if (c.url.searchParams.get("meta") === "1" || !file) return json(c.res, file ? 200 : 410, { ok: Boolean(file), artifact: a });
     c.res.writeHead(200, { "content-type": a.mediaType ?? "application/octet-stream", "content-length": a.bytes });
-    createReadStream(a.path).pipe(c.res);
+    createReadStream(file).pipe(c.res);
   });
 
   const server = http.createServer(async (req, res) => {

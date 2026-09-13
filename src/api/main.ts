@@ -1,12 +1,13 @@
 // API entry point: npx tsx src/api/main.ts  (PERISCOPE_API_PORT, PERISCOPE_DATA_DIR, STEEL_API_KEY)
 // Without STEEL_API_KEY every read endpoint still works from SQLite; POST /runs and account setups answer 503.
 import path from "node:path";
-import { Storage } from "@periscope/knowledge";
+import { Corpus, MiniLmEmbedder, QdrantVectorStore, Storage, corpusConfigFromEnv } from "@periscope/knowledge";
 import { createSteelSegment } from "../steel/segment.js";
 import { RouterSink, launchRun } from "../integration/launch-run.js";
 import { LiveSessions } from "../integration/live-sessions.js";
 import { createApi } from "./server.js";
-import { anthropicComplete, extractFeatures } from "../intel/extract.js";
+import { anthropicComplete } from "../intel/extract.js";
+import { ExtractionWorker } from "../intel/extraction-worker.js";
 
 const dataDir = process.env.PERISCOPE_DATA_DIR ?? "./data";
 const storage = Storage.open({ path: path.join(dataDir, "periscope.sqlite") });
@@ -15,6 +16,11 @@ storage.migrate();
 const hasSteel = Boolean(process.env.STEEL_API_KEY);
 const complete = process.env.ANTHROPIC_API_KEY ? anthropicComplete() : undefined;
 const autoExtract = Boolean(complete) && process.env.PERISCOPE_AUTO_EXTRACT !== "0";
+const semanticEnabled = process.env.PERISCOPE_SEMANTIC === "1";
+const corpus = semanticEnabled ? (() => {
+  const cfg = corpusConfigFromEnv();
+  return new Corpus({ storage, embedder: new MiniLmEmbedder({ modelName: cfg.modelName, dimension: cfg.vectorSize, cacheDir: cfg.modelCacheDir }), vectors: new QdrantVectorStore({ url: cfg.qdrantUrl, collection: cfg.collection, apiKey: cfg.qdrantApiKey }) });
+})() : undefined;
 const router = new RouterSink();
 const live = new LiveSessions();
 const segment = hasSteel ? createSteelSegment({ sink: router }) : undefined;
@@ -25,6 +31,7 @@ if (segment) {
 
 const api = await createApi({
   storage,
+  corpus,
   complete,
   liveSessions: segment ? (runId) => live.view(segment.pool.activeSessions(), runId) : undefined,
   segment: segment ? { resume: segment.resume, acquireSession: segment.acquireSession, profileStatus: (id) => segment.adapter.profileStatus(id) } : undefined,
@@ -35,17 +42,12 @@ const api = await createApi({
   }) : undefined,
 });
 if (autoExtract) {
-  // After a run finishes, fill the matrix so the frontend has rows without a manual step. Costs one model call per competitor.
-  const seen = new Set<string>();
   const startedAt = new Date().toISOString();
-  setInterval(() => {
-    for (const r of storage.listRuns(20)) {
-      if (r.status !== "completed" || r.createdAt < startedAt || seen.has(r.id) || storage.getFindingsByRun(r.id, "feature").length > 0) continue;
-      seen.add(r.id);
-      const competitors = [...new Set(storage.getJobsByRun(r.id).map((j) => j.competitor).filter((x): x is string => Boolean(x)))];
-      for (const competitor of competitors) extractFeatures({ storage, runId: r.id, competitor, complete: complete! }).then((x) => console.log(`[${r.id}] matrix ${competitor}: ${x.rows.length} rows, ${x.findings.length} findings, ${x.tokensIn}+${x.tokensOut} tokens`), (e) => console.warn(`[${r.id}] extract failed: ${(e as Error).message}`));
-    }
-  }, 5000).unref();
+  const extractor = new ExtractionWorker(storage, complete!, startedAt);
+  setInterval(() => void extractor.tick(), 5000).unref();
+}
+if (corpus) {
+  void corpus.ensureCollection().then(() => setInterval(() => void corpus.indexPending().catch((e) => console.warn(`[semantic] ${e.message}`)), 5000).unref()).catch((e) => console.warn(`[semantic] disabled: ${e.message}`));
 }
 console.log(`periscope api on http://localhost:${api.port} (steel ${hasSteel ? "on" : "off, read-only"}, model ${complete ? "on" : "off"}); contract in docs/api.md`);
 

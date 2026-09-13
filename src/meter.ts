@@ -1,8 +1,8 @@
 import type { ActionReceipt, EventSink } from "@periscope/contracts";
 
 // Opus 5 pricing (dollars per million tokens) — update if pricing changes
-const OPUS_INPUT_RATE = 15 / 1_000_000;
-const OPUS_OUTPUT_RATE = 75 / 1_000_000;
+const OPUS_INPUT_RATE = Number(process.env.PERISCOPE_INPUT_USD_PER_MILLION ?? 15) / 1_000_000;
+const OPUS_OUTPUT_RATE = Number(process.env.PERISCOPE_OUTPUT_USD_PER_MILLION ?? 75) / 1_000_000;
 
 export interface MeterConfig {
   jobBudgetUsd: number;
@@ -49,12 +49,8 @@ export class Meter {
     this.totalSpend += usd;
     this.callCount++;
 
-    if (currentJobSpend > this.config.jobBudgetUsd) {
-      throw new BudgetExceededError("job", currentJobSpend, this.config.jobBudgetUsd);
-    }
-    if (this.totalSpend > this.config.runBudgetUsd) {
-      throw new BudgetExceededError("run", this.totalSpend, this.config.runBudgetUsd);
-    }
+    // Always return the receipt for a request already billed. canProceed stops the
+    // next request; throwing here used to discard the over-budget call's receipt.
 
     const receipt: ActionReceipt = {
       jobId: params.jobId,

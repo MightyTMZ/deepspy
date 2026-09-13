@@ -456,6 +456,20 @@ with left_col:
                             st.caption(f'artifact {a["path"]} {"available" if a["exists"] else "missing"}')
             else:
                 st.caption(mx.get("note") or "No findings yet.")
+            st.caption("Compare the latest findings from multiple competitor runs")
+            choices = [r["id"] for r in all_runs if r.get("id") != run_id][:19]
+            selected = st.multiselect("Runs to compare", [run_id] + choices, default=[run_id], key=f"matrix_runs_{run_id}")
+            if len(selected) >= 1:
+                code, shared = api_get("/matrix", runs=",".join(selected))
+                if code == 200 and shared.get("grid", {}).get("cells"):
+                    cells = shared["grid"]["cells"]
+                    table = []
+                    for cell in cells:
+                        row = {"feature": cell["feature"]}
+                        for competitor, value in cell["byCompetitor"].items():
+                            row[competitor] = (value or {}).get("value") or ((value or {}).get("status") if value else "—")
+                        table.append(row)
+                    st.dataframe(table, use_container_width=True, hide_index=True)
 
         with tab_events:
             _, ev = api_get(f"/runs/{run_id}/events", format="json")
@@ -481,16 +495,19 @@ with left_col:
         for msg in st.session_state.chat_messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"], unsafe_allow_html=True)
-        if query := st.chat_input("Search what Periscope found (words are matched against text, url and the revealing action)"):
+        if query := st.chat_input("Ask what Periscope found (answers include evidence)"):
             st.session_state.chat_messages.append({"role": "user", "content": query})
             parts = []
             for run_id in st.session_state.active_runs:
-                _, res = api_get(f"/runs/{run_id}/observations", q=query, limit=15)
-                for o in res.get("observations", []):
+                code, res = api_post(f"/runs/{run_id}/research", {"query": query})
+                for claim in res.get("claims", []) if code == 200 else []:
+                    evidence = ", ".join(claim.get("evidenceIds", [])[:3])
+                    parts.append(f'<div class="hidden-line">{claim.get("text", "")}<br><span class="muted">evidence: {evidence}</span></div>')
+                for o in res.get("observations", []) if code == 200 else []:
                     via = (o.get("revealedBy") or {}).get("label") or ""
                     cls = "hidden-line" if o.get("missedByFetch") else "surface-line"
                     parts.append(f'<div class="{cls}">{o["text"][:220]}<br><span class="muted">{o["competitor"]} · {o["layer"]} · {o["url"]}{" · via " + via if via else ""}</span></div>')
-            answer = f"**{len(parts)}** matching observations\n" + "\n".join(parts) if parts else "Nothing matched. Try fewer words."
+            answer = "\n".join(parts) if parts else "Nothing matched. Try fewer words."
             st.session_state.chat_messages.append({"role": "assistant", "content": answer})
             st.rerun()
 

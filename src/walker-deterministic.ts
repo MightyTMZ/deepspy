@@ -12,6 +12,7 @@ import type { Page } from "playwright-core";
 import type { Observation, SessionHandle, WallDetected, EventSink } from "@periscope/contracts";
 import { createObservation } from "./utils/observation-factory.js";
 import { textHash } from "./utils/text.js";
+import { saveScreenshot } from "./utils/screenshot.js";
 import { classifyFromDom } from "./steel/walls.js";
 import { visibleLines, CODE_LIKE } from "./reveal-deterministic.js";
 import type { WalkerResult, ScreenInfo } from "./walker.js";
@@ -90,12 +91,15 @@ export async function walkDeterministic(cfg: DeterministicWalkerConfig): Promise
     const hash = textHash(lines.join("\n"));
     const obs: Observation[] = [];
     if (!screens.has(hash)) {
+      const screenshotPath = await saveScreenshot(page);
+      const screen = createObservation({ runId: cfg.runId, jobId: cfg.jobId, competitor: cfg.competitor, url: page.url(), layer: "interior", source: "browser", kind: "screen", text: JSON.stringify({ label, hash, parentHash: parentHash ?? null }), vantage: cfg.handle.vantage, perception: "dom", screenshotPath, steelSessionId: cfg.handle.sessionId, viewerUrl: cfg.handle.viewerUrl });
+      await cfg.sink.write({ type: "observation", data: screen });
       for (const line of lines) {
         if (seenLines.has(line)) continue;
         seenLines.add(line);
         const o = createObservation({
           runId: cfg.runId, jobId: cfg.jobId, competitor: cfg.competitor, url: page.url(), layer: "interior", source: "browser",
-          kind: "text", text: line, revealedBy: { action: "click", label }, vantage: cfg.handle.vantage, perception: "dom",
+          kind: "text", text: line, revealedBy: { action: "click", label }, vantage: cfg.handle.vantage, perception: "dom", screenshotPath,
           steelSessionId: cfg.handle.sessionId, viewerUrl: cfg.handle.viewerUrl,
         });
         const flagged = cfg.surfaceBaseline !== undefined ? { ...o, missedByFetch: !cfg.surfaceBaseline.includes(o.text) } : o;

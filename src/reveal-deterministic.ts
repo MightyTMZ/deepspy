@@ -11,6 +11,7 @@ import type { Page, Locator } from "playwright-core";
 import type { Observation, SessionHandle, EventSink } from "@periscope/contracts";
 import { createObservation, markMissedByFetch } from "./utils/observation-factory.js";
 import { normalizeText, splitBlocks } from "./utils/text.js";
+import { saveScreenshot } from "./utils/screenshot.js";
 
 /** Visible text as normalized lines. innerText preserves the line structure the diff needs. */
 export async function visibleLines(page: Page): Promise<string[]> {
@@ -97,11 +98,12 @@ async function capture(ctx: Ctx, strategy: string, revealedBy: Observation["reve
     blocks.push(line);
   }
   let n = 0;
+  const screenshotPath = blocks.length ? await saveScreenshot(ctx.cfg.page) : undefined;
   for (const block of blocks) {
     if (block.length < 3 || CODE_LIKE.test(block)) continue;
     let obs = createObservation({
       runId: ctx.cfg.runId, jobId: ctx.cfg.jobId, competitor: ctx.cfg.competitor, url: ctx.cfg.url,
-      layer: "hidden", source: "browser", kind: "text", text: block, revealedBy,
+      layer: "hidden", source: "browser", kind: "text", text: block, revealedBy, screenshotPath,
       vantage: ctx.cfg.handle.vantage, perception: "dom", steelSessionId: ctx.cfg.handle.sessionId, viewerUrl: ctx.cfg.handle.viewerUrl,
     });
     obs = markMissedByFetch(obs, ctx.cfg.surfaceBaseline);

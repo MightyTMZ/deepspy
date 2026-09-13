@@ -19,6 +19,7 @@ import { walkDeterministic } from "./walker-deterministic.js";
 import { runBorders } from "./borders.js";
 import { createStagehand } from "./utils/stagehand-bridge.js";
 import Steel from "steel-sdk";
+import { abortable } from "./utils/cancellation.js";
 
 export type JobType = "surface" | "benchmark" | "reveal" | "borders" | "walker";
 
@@ -50,6 +51,7 @@ export interface CoordinatorConfig {
    */
   onWall?: (wall: WallDetected, handle: SessionHandle) => Promise<HandoffEvent | { jobId: string; state: "solved_by_steel" }>;
   waitForResolution?: (jobId: string) => Promise<"resumed" | "abandoned">;
+  cancelHandoff?: (jobId: string) => Promise<void>;
 }
 
 const MAX_CONCURRENT = 10;
@@ -70,6 +72,8 @@ export class Coordinator {
   private policy: Policy;
   private jobs: Job[] = [];
   private running = new Set<string>();
+  private controllers = new Map<string, AbortController>();
+  private handles = new Map<string, Set<SessionHandle>>();
 
   constructor(config: CoordinatorConfig) {
     this.config = config;
@@ -108,13 +112,14 @@ export class Coordinator {
     };
     this.jobs.sort((a, b) => priority[a.type] - priority[b.type]);
 
-    const promises: Promise<void>[] = [];
+    const promises = new Set<Promise<void>>();
 
     for (const job of this.jobs) {
       // Wait if at capacity
       while (this.running.size >= MAX_CONCURRENT) {
         await Promise.race(promises);
       }
+      if (job.state === "cancelled") continue;
 
       // Check run budget
       if (!this.meter.canProceed(job.id)) {
@@ -124,11 +129,13 @@ export class Coordinator {
         continue;
       }
 
+      this.running.add(job.id);
+      this.controllers.set(job.id, new AbortController());
       const p = this.executeJob(job).finally(() => {
         this.running.delete(job.id);
+        promises.delete(p);
       });
-      this.running.add(job.id);
-      promises.push(p);
+      promises.add(p);
     }
 
     // Wait for all to complete
@@ -147,11 +154,32 @@ export class Coordinator {
    */
   async cancel(jobId: string): Promise<void> {
     const job = this.jobs.find((j) => j.id === jobId);
-    if (job) {
+    if (job && !["completed", "failed", "partial", "cancelled"].includes(job.state)) {
       job.state = "cancelled";
       job.reason = "Manually cancelled";
+      this.controllers.get(jobId)?.abort(new Error("Run cancelled"));
+      await this.config.cancelHandoff?.(jobId);
+      await Promise.allSettled([...(this.handles.get(jobId) ?? [])].map((h) => h.release()));
       await this.emitJobState(job);
     }
+  }
+
+  async cancelAll(): Promise<void> {
+    await Promise.all(this.jobs.map((job) => this.cancel(job.id)));
+  }
+
+  private signal(job: Job): AbortSignal { return this.controllers.get(job.id)!.signal; }
+
+  private async acquire(job: Job, req: LeaseRequest): Promise<SessionHandle> {
+    const signal = this.signal(job);
+    signal.throwIfAborted();
+    const handle = await abortable(this.config.acquireSession(req), signal, (h) => h.release());
+    const owned = this.handles.get(job.id) ?? new Set<SessionHandle>();
+    owned.add(handle); this.handles.set(job.id, owned);
+    const release = handle.release.bind(handle);
+    let releasing: Promise<void> | undefined;
+    handle.release = () => releasing ??= release().finally(() => owned.delete(handle));
+    return handle;
   }
 
   /**
@@ -190,7 +218,7 @@ export class Coordinator {
       job.state = "running";
       await this.emitJobState(job);
 
-      switch (job.type) {
+      await abortable((async () => { switch (job.type) {
         case "surface":
           await this.runSurface(job);
           break;
@@ -206,13 +234,16 @@ export class Coordinator {
         case "borders":
           await this.runBordersJob(job);
           break;
-      }
+      } })(), this.signal(job));
 
       if (job.state === "running") {
         job.state = "completed";
       }
     } catch (err) {
-      if (err instanceof BudgetExceededError) {
+      if (this.signal(job).aborted) {
+        job.state = "cancelled";
+        job.reason = "Manually cancelled";
+      } else if (err instanceof BudgetExceededError) {
         job.state = "partial";
         job.reason = err.message;
       } else {
@@ -226,6 +257,7 @@ export class Coordinator {
 
   private async runSurface(job: Job): Promise<void> {
     for (const url of job.urls) {
+      this.signal(job).throwIfAborted();
       await scrapeSurface({
         steel: this.config.steel,
         url,
@@ -244,6 +276,7 @@ export class Coordinator {
 
   private async runBenchmark(job: Job): Promise<void> {
     for (const url of job.urls) {
+      this.signal(job).throwIfAborted();
       await fetchBenchmark({
         url,
         competitor: job.competitor,
@@ -267,7 +300,7 @@ export class Coordinator {
       authenticated: false,
     };
 
-    const handle = await this.config.acquireSession({
+    const handle = await this.acquire(job, {
       vantage,
       purpose: "reveal",
     });
@@ -278,13 +311,12 @@ export class Coordinator {
       const useModel = process.env.PERISCOPE_STAGEHAND === "1" && Boolean(process.env.ANTHROPIC_API_KEY); // opt in: Stagehand on Steel attaches (extension) but its page handling is not stable yet
       // Stagehand attaches after the first navigation: connecting on about:blank leaves its extension without a page (verified live on Steel).
       let sh: Awaited<ReturnType<typeof createStagehand>> | undefined;
-      const page = handle.page;
+      let page = handle.page;
 
       try {
         for (const url of job.urls) {
           await page.goto(url, { waitUntil: "load", timeout: 60_000 });
           await page.waitForTimeout(1000);
-          if (useModel && !sh) sh = await createStagehand(handle).catch((e: Error) => { console.warn(`[stagehand] unavailable, continuing without a model: ${e.message.split(String.fromCharCode(10))[0]}`); return undefined; });
 
           // Get surface baseline for this URL
           const surfaceResult = await scrapeSurface({
@@ -309,7 +341,9 @@ export class Coordinator {
             sink: this.config.sink,
           });
 
+          if (useModel && !sh) sh = await createStagehand(handle, { meter: this.meter, sink: this.config.sink, jobId: job.id, runId: this.config.runId });
           if (sh) {
+            page = sh.page;
             await reveal({
               runId: this.config.runId,
               jobId: job.id,
@@ -340,7 +374,7 @@ export class Coordinator {
       authenticated: true,
     };
 
-    const handle = await this.config.acquireSession({
+    const handle = await this.acquire(job, {
       vantage,
       profileId: job.profileId,
       accountRef: job.accountRef,
@@ -351,7 +385,7 @@ export class Coordinator {
       // Without a model key the deterministic walker (segment C) crawls links; with one, Tom's Stagehand walker operates controls.
       const useModel = process.env.PERISCOPE_STAGEHAND === "1" && Boolean(process.env.ANTHROPIC_API_KEY); // opt in: Stagehand on Steel attaches (extension) but its page handling is not stable yet
       if (useModel) await handle.page.goto(job.urls[0], { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => undefined); // Stagehand needs a real page before it attaches
-      const sh = useModel ? await createStagehand(handle).catch((e: Error) => { console.warn(`[stagehand] unavailable, continuing without a model: ${e.message.split(String.fromCharCode(10))[0]}`); return undefined; }) : undefined;
+      const sh = useModel ? await createStagehand(handle, { meter: this.meter, sink: this.config.sink, jobId: job.id, runId: this.config.runId }) : undefined;
       const page = sh?.page ?? handle.page;
       const stagehand = sh?.stagehand;
 
@@ -360,6 +394,7 @@ export class Coordinator {
         // session, and the walk resumes. Bounded so a wall that keeps reappearing cannot loop forever.
         let startUrl = job.urls[0];
         for (let attempt = 0; attempt < 3; attempt++) {
+          this.signal(job).throwIfAborted();
           const result = stagehand
             ? await walk({
                 runId: this.config.runId,
@@ -389,6 +424,11 @@ export class Coordinator {
             break;
           }
           if (!result.wallDetected) break;
+          if (attempt === 2) {
+            job.state = "partial";
+            job.reason = "Wall retry limit reached";
+            break;
+          }
 
           if (!this.config.onWall || !this.config.waitForResolution) {
             job.state = "awaiting_human";
@@ -400,7 +440,7 @@ export class Coordinator {
             startUrl = page.url();
             continue;
           }
-          const resolution = await this.config.waitForResolution(job.id);
+          const resolution = await abortable(this.config.waitForResolution(job.id), this.signal(job));
           if (resolution === "abandoned") {
             job.state = "partial";
             job.reason = `wall ${result.wallDetected.wall} not resolved by a human`;
@@ -441,7 +481,7 @@ export class Coordinator {
       meter: this.meter,
       policy: this.policy,
       sink: this.config.sink,
-      acquireSession: this.config.acquireSession,
+      acquireSession: (req) => this.acquire(job, req),
     });
   }
 }

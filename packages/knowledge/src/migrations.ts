@@ -20,7 +20,7 @@ export interface Migration {
   readonly sql: string;
 }
 
-export const MIGRATIONS: readonly Migration[] = [
+export const MIGRATIONS: Migration[] = [
   {
     version: 1,
     name: "initial_system_of_record",
@@ -384,6 +384,14 @@ export const MIGRATIONS: readonly Migration[] = [
     `,
   },
 ];
+
+MIGRATIONS.push({ version: 3, name: "observation_artifacts", sql: `
+  CREATE TABLE observation_artifacts (
+    observation_id TEXT NOT NULL REFERENCES observations(id) ON DELETE CASCADE,
+    artifact_id TEXT NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+    PRIMARY KEY (observation_id, artifact_id)
+  );
+` });
 
 export const LATEST_VERSION: number =
   MIGRATIONS.reduce((max, m) => (m.version > max ? m.version : max), 0);

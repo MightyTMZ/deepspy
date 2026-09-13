@@ -6,6 +6,7 @@ import { Coordinator, type Job, type JobType } from "../coordinator.js";
 import type { SteelSegment } from "../steel/segment.js";
 import { StorageSink } from "./storage-sink.js";
 import type { LiveSessions } from "./live-sessions.js";
+import { archiveSession, evidenceSink } from "./evidence.js";
 
 export interface RunSpec {
   runId: string;
@@ -24,7 +25,7 @@ export interface RunSpec {
 
 export interface LaunchDeps {
   storage: Storage;
-  segment: Pick<SteelSegment, "acquireSession" | "steel" | "onWall" | "waitForResolution">;
+  segment: Pick<SteelSegment, "acquireSession" | "steel" | "onWall" | "waitForResolution"> & Partial<Pick<SteelSegment, "handoff" | "notifier" | "adapter">>;
   router: RouterSink;
   live?: LiveSessions;
   onEvent?: (e: Event) => void;
@@ -80,19 +81,31 @@ export function launchRun(spec: RunSpec, deps: LaunchDeps): LaunchHandle {
   const jobs = buildJobs(spec);
   const jobHints = new Map<string, { purpose: "surface" | "reveal" | "borders" | "walker" | "setup"; competitor: string; url?: string }>();
   const store: EventSink = new StorageSink({ storage: deps.storage, runId: spec.runId, category: spec.category ?? "demo", capUsd, jobHints: (id) => jobHints.get(id) });
+  const evidence = evidenceSink(deps.storage, store);
   const tee: EventSink = {
     async write(event: Event) {
-      await store.write(event);
+      await evidence.write(event);
       deps.onEvent?.(event);
       if (event.type === "handoff") deps.onHandoff?.(event.data);
     },
   };
 
+  const acquire: SteelSegment["acquireSession"] = async (req) => {
+    const h = await deps.segment.acquireSession(req);
+    const release = h.release.bind(h);
+    let releasing: Promise<void> | undefined;
+    h.release = () => releasing ??= (async () => {
+      await release();
+      if (deps.segment.adapter) await archiveSession(deps.storage, deps.segment.adapter, spec.runId, h);
+    })();
+    return h;
+  };
   const coordinator = new Coordinator({
     runId: spec.runId, runBudgetUsd: capUsd, jobBudgetUsd: Math.min(capUsd, 4), runStartedAt: new Date().toISOString(),
-    sink: tee, acquireSession: deps.live ? deps.live.wrap(spec.runId, spec.competitor, deps.segment.acquireSession) : deps.segment.acquireSession, steel: deps.segment.steel,
+    sink: tee, acquireSession: deps.live ? deps.live.wrap(spec.runId, spec.competitor, acquire) : acquire, steel: deps.segment.steel,
     onWall: (wall, handle) => deps.segment.onWall(wall, handle),
     waitForResolution: deps.segment.waitForResolution,
+    cancelHandoff: async (jobId) => { await deps.segment.handoff?.cancel(jobId); deps.segment.notifier?.stop(jobId); },
   });
   coordinator.enqueue(jobs);
   for (const j of coordinator.getState().queued) {
@@ -109,8 +122,8 @@ export function launchRun(spec: RunSpec, deps: LaunchDeps): LaunchHandle {
   return {
     runId: spec.runId, coordinator, done,
     cancel: async () => {
-      for (const j of coordinator.getState().queued) await coordinator.cancel(j.id);
-      deps.storage.setRunStatus(spec.runId, "cancelled", "cancelled through the API; running jobs finish their current page");
+      deps.storage.setRunStatus(spec.runId, "cancelled", "cancelled through the API");
+      await coordinator.cancelAll();
     },
   };
 }

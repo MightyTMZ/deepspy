@@ -957,7 +957,17 @@ export class Storage {
     const eventPayload = JSON.stringify(event);
 
     const tx = this.#db.transaction((): WriteOutcome => {
+      const jobs = this.getJobsByRun(run.id);
+      const status = run.status === "cancelled" ? "cancelled"
+        : jobs.some((j) => ["failed", "partial", "awaiting_human", "cancelled"].includes(j.state)) ? "partial" : "completed";
       s.completeRun.run({ id: run.id, completed_at: at, updated_at: at });
+      if (status !== "completed") s.setRunStatus.run({
+        id: run.id,
+        status,
+        reason: run.reason ?? "One or more jobs did not complete",
+        updated_at: at,
+        completed_at: at,
+      });
       const ev = s.insertEvent.run({
         run_id: run.id,
         job_id: null,
@@ -1241,6 +1251,15 @@ export class Storage {
   }
 
   /* ---------------- lifecycle ---------------- */
+  linkArtifact(observationId: string, artifactId: string): void {
+    this.#assertWritable();
+    this.#db.prepare("INSERT OR IGNORE INTO observation_artifacts(observation_id, artifact_id) VALUES (?, ?)").run(observationId, artifactId);
+  }
+
+  artifactsForObservation(observationId: string): ArtifactRecord[] {
+    this.#assertOpen();
+    return (this.#db.prepare("SELECT a.* FROM artifacts a JOIN observation_artifacts oa ON oa.artifact_id = a.id WHERE oa.observation_id = ?").all(observationId) as ArtifactRow[]).map(mapArtifact);
+  }
 
   close(): void {
     if (this.#closed) return;
