@@ -159,6 +159,10 @@ async function tabsAndAccordions(ctx: Ctx): Promise<void> {
     const el = candidates.nth(i);
     const label = await labelOf(el);
     if (!label) continue;
+    // Site navigation menus (Platform, Solutions, Resources ...) open on click too, but a menu is not hidden
+    // content about the product; counting it would inflate the missed-by-fetch number.
+    const inNav = await el.evaluate((e) => Boolean(e.closest("nav, header, [role=navigation], [role=menubar]"))).catch(() => false);
+    if (inNav) continue;
     if (await guardedClick(ctx, el, label)) await capture(ctx, "tabs", { action: "click", label });
   }
   if (count === 0) {

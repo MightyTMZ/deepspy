@@ -11,6 +11,7 @@ so the same screens work against fixtures/api/*.json for design work.
 
 import json
 import os
+import re
 import time
 import uuid
 from pathlib import Path
@@ -67,6 +68,53 @@ def api_post(path: str, body: dict | None = None, headers: dict | None = None):
 def api_health():
     code, body = api_get("/health")
     return body if code == 200 else None
+
+
+PRICE_LIKE = re.compile(r"[$€£]\s?\d|\d+\s?(€|/1k|per |/GB|/hr|/hour|/min|credits|seats?)", re.I)
+
+
+def latest_run_per_competitor(runs: list[dict]) -> dict[str, dict]:
+    """Newest finished run with observations for each competitor (runs come newest first)."""
+    out: dict[str, dict] = {}
+    for r in runs:
+        if r.get("status") not in ("completed", "partial") or not r.get("observations"):
+            continue
+        for comp in r.get("competitors", []):
+            out.setdefault(comp, r)
+    return out
+
+
+def market_rows(runs: list[dict], names: list[str]) -> list[dict]:
+    """One row per competitor: counter, the lines a fetch tool never returned, time. All from the API."""
+    latest = latest_run_per_competitor(runs)
+    rows = []
+    for name in names:
+        r = latest.get(name)
+        if not r:
+            rows.append({"competitor": name, "run": None})
+            continue
+        _, cov = api_get(f"/runs/{r['id']}/coverage")
+        pages = cov.get("pages", []) if isinstance(cov, dict) else []
+        page = pages[0] if pages else {}
+        _, hid = api_get(f"/runs/{r['id']}/observations", layer="hidden", missedByFetch=1, limit=120)
+        lines = [o for o in hid.get("observations", []) if o.get("kind") in ("text", "document", "option")]
+        priced = [o for o in lines if PRICE_LIKE.search(o["text"])]
+        picks = (priced + [o for o in lines if o not in priced])[:3]
+        seconds = None
+        try:
+            from datetime import datetime
+            a = datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00"))
+            b = datetime.fromisoformat((r.get("completedAt") or r["updatedAt"]).replace("Z", "+00:00"))
+            seconds = int((b - a).total_seconds())
+        except Exception:
+            pass
+        rows.append({
+            "competitor": name, "run": r["id"], "url": page.get("url", ""), "counter": page.get("counter", page.get("missedByFetch", 0)),
+            "surface": page.get("surface", 0), "hidden": page.get("hidden", 0), "documents": page.get("documents", 0),
+            "priced": len(priced), "picks": picks, "seconds": seconds,
+            "actions": sorted(page.get("byAction", {}).items(), key=lambda kv: -kv[1])[:3],
+        })
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -232,11 +280,44 @@ with left_col:
             st.success(f"Started {len(started)} run(s).")
             st.rerun()
 
-    # ---------------- run picker ----------------
-    _, runs_body = api_get("/runs", limit=50)
+    # ---------------- market: latest run per competitor ----------------
+    _, runs_body = api_get("/runs", limit=100)
     all_runs = runs_body.get("runs", []) if isinstance(runs_body, dict) else []
     if not st.session_state.active_runs and all_runs:
-        st.markdown("##### Runs")
+        names = [c["name"] for c in competitors if c.get("name")]
+        rows = market_rows(all_runs, names)
+        if any(r.get("run") for r in rows):
+            st.markdown("##### The market, seen from Steel")
+            st.markdown('<span class="muted">Latest run per competitor. The red number is what a fetch tool never returned on that page.</span>', unsafe_allow_html=True)
+            for r in rows:
+                if not r.get("run"):
+                    st.markdown(f'<div class="mono"><strong>{r["competitor"]}</strong> <span class="muted">not run yet</span></div>', unsafe_allow_html=True)
+                    continue
+                c_num, c_body, c_btn = st.columns([1, 6, 1])
+                with c_num:
+                    st.markdown(f'<div class="counter">{r["counter"]}</div><div class="counter-label">missed by fetch</div>', unsafe_allow_html=True)
+                with c_body:
+                    via = ", ".join(f"{k} ({v})" for k, v in r["actions"]) or "no action needed"
+                    docs = f", {r['documents']} documents" if r["documents"] else ""
+                    st.markdown(
+                        f'<strong>{r["competitor"]}</strong> <span class="mono muted">{r["url"]}</span><br>'
+                        f'<span class="muted">fetch saw {r["surface"]} lines · Periscope revealed {r["hidden"]} more, {r["priced"]} of them prices'
+                        f'{docs} · {r["seconds"]} s · via {via}</span>',
+                        unsafe_allow_html=True,
+                    )
+                    for o in r["picks"]:
+                        label = (o.get("revealedBy") or {}).get("label") or ""
+                        st.markdown(f'<div class="hidden-line">{o["text"][:150]}<span class="muted"> · {label}</span></div>', unsafe_allow_html=True)
+                with c_btn:
+                    if st.button("Open", key=f"market_{r['run']}"):
+                        st.session_state.active_runs = [r["run"]]
+                        st.session_state.chat_messages = []
+                        st.rerun()
+            st.divider()
+
+    # ---------------- run picker ----------------
+    if not st.session_state.active_runs and all_runs:
+        st.markdown("##### All runs")
         for r in all_runs[:15]:
             c_info, c_btn = st.columns([5, 1])
             with c_info:
