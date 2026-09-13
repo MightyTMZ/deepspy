@@ -147,7 +147,23 @@ export function createApi(opts: ApiOptions): Promise<Api> {
     json(c.res, 202, { ok: true, runId: spec.runId, run: runView(storage, spec.runId, runs) });
   });
 
+  route("GET", "/runs", (c) => {
+    const limit = Math.min(Number(c.url.searchParams.get("limit") ?? 50), 500);
+    json(c.res, 200, { ok: true, runs: storage.listRuns(limit).map((r) => ({ ...r, spentUsd: dollars(r.spentMicroUsd), capUsd: dollars(r.capMicroUsd), live: runs.has(r.id), observations: storage.countObservations(r.id), competitors: [...new Set(storage.getJobsByRun(r.id).map((j) => j.competitor).filter(Boolean))] })) });
+  });
   route("GET", "/runs/:id", (c) => { if (runOr404(c)) json(c.res, 200, { ok: true, ...runView(storage, c.params.id, runs) }); });
+  route("GET", "/runs/:id/observations", (c) => {
+    if (!runOr404(c)) return;
+    const q = (c.url.searchParams.get("q") ?? "").toLowerCase();
+    const competitor = c.url.searchParams.get("competitor") ?? undefined;
+    const layer = (c.url.searchParams.get("layer") ?? undefined) as "surface" | "hidden" | "borders" | "interior" | undefined;
+    const missed = c.url.searchParams.get("missedByFetch");
+    const limit = Math.min(Number(c.url.searchParams.get("limit") ?? 200), 2000);
+    const all = storage.getObservationsByRun(c.params.id, { competitor, layer, missedByFetch: missed === null ? undefined : missed === "1" || missed === "true" });
+    const words = q.split(/\s+/).filter(Boolean);
+    const hits = words.length ? all.filter((o) => { const hay = `${o.text} ${o.url} ${o.revealedBy?.label ?? ""}`.toLowerCase(); return words.every((w) => hay.includes(w)); }) : all;
+    json(c.res, 200, { ok: true, runId: c.params.id, total: hits.length, observations: hits.slice(0, limit) });
+  });
 
   route("POST", "/runs/:id/cancel", async (c) => {
     if (!runOr404(c)) return;

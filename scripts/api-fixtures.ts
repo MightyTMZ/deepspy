@@ -43,7 +43,7 @@ api.recordHandoff({ jobId: "run-saturday-borders", viewerUrl: "https://app.steel
 const base = `http://localhost:${api.port}`;
 const out = path.join("fixtures", "api"); mkdirSync(out, { recursive: true });
 const routes: Array<[string, string, string, unknown?]> = [
-  ["health", "GET", "/health"], ["run", "GET", "/runs/run-saturday"], ["run-events", "GET", "/runs/run-saturday/events?format=json"],
+  ["health", "GET", "/health"], ["runs", "GET", "/runs"], ["run", "GET", "/runs/run-saturday"], ["observations", "GET", "/runs/run-saturday/observations?q=legal&limit=5"], ["run-events", "GET", "/runs/run-saturday/events?format=json"],
   ["handoffs", "GET", "/handoffs"], ["job-takeover", "POST", "/jobs/run-saturday-borders/takeover", {}], ["job-viewer", "GET", "/jobs/run-saturday-borders/viewer"],
   ["coverage", "GET", "/runs/run-saturday/coverage"], ["borders", "GET", "/runs/run-saturday/borders"], ["prices", "GET", "/runs/run-saturday/prices"],
   ["matrix", "GET", "/runs/run-saturday/matrix"], ["diff", "GET", "/runs/run-saturday/diff?from=run-friday"], ["finding", "GET", "/findings/finding-sla"],

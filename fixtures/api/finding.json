@@ -18,7 +18,7 @@
         "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
         "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx"
       ],
-      "createdAt": "2026-09-13T10:37:08.916Z"
+      "createdAt": "2026-09-13T10:43:54.866Z"
     },
     "observations": [
       {
@@ -37,7 +37,7 @@
           "authenticated": false
         },
         "perception": "dom",
-        "capturedAt": "2026-09-13T10:37:08.914Z",
+        "capturedAt": "2026-09-13T10:43:54.863Z",
         "missedByFetch": true,
         "revealedBy": {
           "action": "click",
@@ -62,7 +62,7 @@
           "authenticated": false
         },
         "perception": "dom",
-        "capturedAt": "2026-09-13T10:37:08.914Z",
+        "capturedAt": "2026-09-13T10:43:54.864Z",
         "missedByFetch": true,
         "revealedBy": {
           "action": "click",
