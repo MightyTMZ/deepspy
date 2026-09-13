@@ -79,6 +79,8 @@ def latest_run_per_competitor(runs: list[dict]) -> dict[str, dict]:
     for r in runs:
         if r.get("status") not in ("completed", "partial") or not r.get("observations"):
             continue
+        if "reveal" not in r.get("purposes", ["reveal"]):
+            continue  # a borders-only or walker-only run has no side by side to show
         for comp in r.get("competitors", []):
             out.setdefault(comp, r)
     return out
@@ -99,7 +101,10 @@ def market_rows(runs: list[dict], names: list[str]) -> list[dict]:
         _, hid = api_get(f"/runs/{r['id']}/observations", layer="hidden", missedByFetch=1, limit=120)
         lines = [o for o in hid.get("observations", []) if o.get("kind") in ("text", "document", "option")]
         priced = [o for o in lines if PRICE_LIKE.search(o["text"])]
-        picks = (priced + [o for o in lines if o not in priced])[:3]
+        # prices first, then lines revealed by a click on the page itself, third-party iframes last
+        rest = [o for o in lines if o not in priced]
+        own = [o for o in rest if not str((o.get("revealedBy") or {}).get("label", "")).startswith("iframe")]
+        picks = (priced + own + [o for o in rest if o not in own])[:3]
         seconds = None
         try:
             from datetime import datetime

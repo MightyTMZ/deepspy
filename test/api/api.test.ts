@@ -62,7 +62,7 @@ describe("A14 every endpoint answers with the documented shape without Steel or 
     const r = await get("/runs"); expect(r.status).toBe(200);
     const list = r.body.runs as Array<Record<string, unknown>>;
     expect(list.map((x) => x.id)).toEqual(expect.arrayContaining(["r1", "r2"]));
-    expect(list.find((x) => x.id === "r1")).toMatchObject({ observations: 4, competitors: ["acme"], spentUsd: 0.25 });
+    expect(list.find((x) => x.id === "r1")).toMatchObject({ observations: 4, competitors: ["acme"], purposes: ["reveal"], spentUsd: 0.25 });
     const o = await get("/runs/r1/observations?q=team%20month&layer=hidden"); expect(o.status).toBe(200);
     expect(o.body.total).toBe(1);
     expect((o.body.observations as Array<{ text: string }>)[0].text).toBe("Team $24 per month");

@@ -151,7 +151,7 @@ export function createApi(opts: ApiOptions): Promise<Api> {
 
   route("GET", "/runs", (c) => {
     const limit = Math.min(Number(c.url.searchParams.get("limit") ?? 50), 500);
-    json(c.res, 200, { ok: true, runs: storage.listRuns(limit).map((r) => ({ ...r, spentUsd: dollars(r.spentMicroUsd), capUsd: dollars(r.capMicroUsd), live: runs.has(r.id), observations: storage.countObservations(r.id), competitors: [...new Set(storage.getJobsByRun(r.id).map((j) => j.competitor).filter(Boolean))] })) });
+    json(c.res, 200, { ok: true, runs: storage.listRuns(limit).map((r) => ({ ...r, spentUsd: dollars(r.spentMicroUsd), capUsd: dollars(r.capMicroUsd), live: runs.has(r.id), observations: storage.countObservations(r.id), competitors: [...new Set(storage.getJobsByRun(r.id).map((j) => j.competitor).filter(Boolean))], purposes: [...new Set(storage.getJobsByRun(r.id).map((j) => j.purpose))] })) });
   });
   route("GET", "/runs/:id", (c) => { if (runOr404(c)) json(c.res, 200, { ok: true, ...runView(storage, c.params.id, runs) }); });
   route("GET", "/runs/:id/observations", (c) => {

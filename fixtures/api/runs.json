@@ -14,9 +14,9 @@
         "category": "demo",
         "capMicroUsd": 12000000,
         "spentMicroUsd": 420000,
-        "createdAt": "2026-09-13T10:56:33.075Z",
-        "updatedAt": "2026-09-13T10:56:33.079Z",
-        "completedAt": "2026-09-13T10:56:33.079Z",
+        "createdAt": "2026-09-13T11:10:42.437Z",
+        "updatedAt": "2026-09-13T11:10:42.440Z",
+        "completedAt": "2026-09-13T11:10:42.440Z",
         "reason": null,
         "spentUsd": 0.42,
         "capUsd": 12,
@@ -24,6 +24,10 @@
         "observations": 18,
         "competitors": [
           "ornn"
+        ],
+        "purposes": [
+          "reveal",
+          "borders"
         ]
       },
       {
@@ -33,9 +37,9 @@
         "category": "demo",
         "capMicroUsd": 12000000,
         "spentMicroUsd": 420000,
-        "createdAt": "2026-09-13T10:56:33.068Z",
-        "updatedAt": "2026-09-13T10:56:33.075Z",
-        "completedAt": "2026-09-13T10:56:33.075Z",
+        "createdAt": "2026-09-13T11:10:42.430Z",
+        "updatedAt": "2026-09-13T11:10:42.436Z",
+        "completedAt": "2026-09-13T11:10:42.436Z",
         "reason": null,
         "spentUsd": 0.42,
         "capUsd": 12,
@@ -43,6 +47,10 @@
         "observations": 18,
         "competitors": [
           "ornn"
+        ],
+        "purposes": [
+          "reveal",
+          "borders"
         ]
       }
     ]
