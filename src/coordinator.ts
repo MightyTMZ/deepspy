@@ -13,6 +13,7 @@ import { Policy } from "./policy.js";
 import { scrapeSurface } from "./surface.js";
 import { fetchBenchmark } from "./benchmark.js";
 import { reveal } from "./reveal.js";
+import { revealDeterministic } from "./reveal-deterministic.js";
 import { walk } from "./walker.js";
 import { runBorders } from "./borders.js";
 import { createStagehand } from "./utils/stagehand-bridge.js";
@@ -271,11 +272,15 @@ export class Coordinator {
     });
 
     try {
-      const { stagehand, page } = await createStagehand(handle);
+      // Deterministic Playwright strategies run first and need no model. Tom's Stagehand reveal is the fallback for
+      // layouts the rules do not recognise, and only runs when a model key is configured.
+      const useModel = Boolean(process.env.ANTHROPIC_API_KEY);
+      const sh = useModel ? await createStagehand(handle) : undefined;
+      const page = sh?.page ?? handle.page;
 
       try {
         for (const url of job.urls) {
-          await page.goto(url, { waitUntil: "domcontentloaded" });
+          await page.goto(url, { waitUntil: "load", timeout: 60_000 });
           await page.waitForTimeout(1000);
 
           // Get surface baseline for this URL
@@ -288,23 +293,37 @@ export class Coordinator {
             vantage,
             sink: this.config.sink,
           });
+          const surfaceBaseline = surfaceResult.rawMarkdown || surfaceResult.rawHtml;
 
-          await reveal({
+          await revealDeterministic({
             runId: this.config.runId,
             jobId: job.id,
             competitor: job.competitor,
             url,
-            surfaceBaseline: surfaceResult.rawMarkdown || surfaceResult.rawHtml,
-            stagehand,
+            surfaceBaseline,
             page,
             handle,
-            meter: this.meter,
-            policy: this.policy,
             sink: this.config.sink,
           });
+
+          if (sh) {
+            await reveal({
+              runId: this.config.runId,
+              jobId: job.id,
+              competitor: job.competitor,
+              url,
+              surfaceBaseline,
+              stagehand: sh.stagehand,
+              page,
+              handle,
+              meter: this.meter,
+              policy: this.policy,
+              sink: this.config.sink,
+            });
+          }
         }
       } finally {
-        await stagehand.close();
+        await sh?.close();
       }
     } finally {
       await handle.release();
