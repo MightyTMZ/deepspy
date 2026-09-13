@@ -77,9 +77,13 @@ def load_competitors() -> list[dict]:
     if os.path.exists(COMPETITORS_FILE):
         with open(COMPETITORS_FILE) as f:
             return json.load(f)
+    # Demo set: Steel's five closest competitors in browser infrastructure, pricing pages first.
     return [
-        {"name": "ornn", "url": "https://ornn.com", "pages": ["/regulatory"]},
-        {"name": "spotify", "url": "https://www.spotify.com", "pages": ["/premium/"]},
+        {"name": "browserbase", "url": "https://www.browserbase.com", "pages": ["/pricing"]},
+        {"name": "hyperbrowser", "url": "https://www.hyperbrowser.ai", "pages": ["/pricing"]},
+        {"name": "anchor", "url": "https://anchorbrowser.io", "pages": ["/pricing"]},
+        {"name": "browserless", "url": "https://www.browserless.io", "pages": ["/pricing"]},
+        {"name": "kernel", "url": "https://www.onkernel.com", "pages": ["/pricing"]},
     ]
 
 
@@ -104,7 +108,7 @@ health = api_health()
 # ---------------------------------------------------------------------------
 
 st.markdown('<h1 style="color:#16a34a;font-weight:800;font-size:2.4rem;margin-bottom:0.1rem;">Periscope</h1>', unsafe_allow_html=True)
-st.markdown('<p class="muted" style="margin-top:0">Every research tool reads what a website serves. Periscope reads what a website hides.</p>', unsafe_allow_html=True)
+st.markdown('<p class="muted" style="margin-top:0">Every research tool reads what a website serves. Periscope reads what a website hides. Demo set: the browser-infrastructure market, seen from Steel.</p>', unsafe_allow_html=True)
 if not health:
     st.error(f"API not reachable at {API}. Start it with `npm run api` (set PERISCOPE_API_URL to point elsewhere).")
     st.stop()
