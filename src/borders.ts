@@ -8,6 +8,7 @@ import type {
 import { Meter } from "./meter.js";
 import { Policy } from "./policy.js";
 import { reveal } from "./reveal.js";
+import { revealDeterministic, LIGHT_STRATEGIES } from "./reveal-deterministic.js";
 import { createStagehand } from "./utils/stagehand-bridge.js";
 
 export interface BordersConfig {
@@ -41,11 +42,27 @@ export async function runBorders(
       });
 
       try {
-        const { stagehand, page } = await createStagehand(handle);
+        const useModel = Boolean(process.env.ANTHROPIC_API_KEY);
+        const sh = useModel ? await createStagehand(handle) : undefined;
+        const page = sh?.page ?? handle.page;
 
         try {
-          await page.goto(config.url, { waitUntil: "domcontentloaded" });
+          await page.goto(config.url, { waitUntil: "load", timeout: 60_000 });
           await page.waitForTimeout(1000);
+
+          const det = await revealDeterministic({
+            runId: config.runId,
+            jobId: config.jobId,
+            competitor: config.competitor,
+            url: config.url,
+            surfaceBaseline: config.surfaceBaseline,
+            page,
+            handle,
+            sink: config.sink,
+            strategies: LIGHT_STRATEGIES, // borders compares the same page across vantages; a full reveal per vantage is too slow
+            emitBaselineAs: "borders",    // every vantage records what it saw, so the grid has rows to compare
+          });
+          if (!sh) return det.observations;
 
           const result = await reveal({
             runId: config.runId,
@@ -53,7 +70,7 @@ export async function runBorders(
             competitor: config.competitor,
             url: config.url,
             surfaceBaseline: config.surfaceBaseline,
-            stagehand,
+            stagehand: sh.stagehand,
             page,
             handle,
             meter: config.meter,
@@ -61,9 +78,9 @@ export async function runBorders(
             sink: config.sink,
           });
 
-          return result.observations;
+          return [...det.observations, ...result.observations];
         } finally {
-          await stagehand.close();
+          await sh?.close();
         }
       } finally {
         await handle.release();
