@@ -33,9 +33,10 @@ st.markdown(
   .muted { color: #6b7280; font-size: 0.85rem; }
   .counter { font-size: 3rem; font-weight: 800; color: #dc2626; line-height: 1; }
   .counter-label { color: #6b7280; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
-  .hidden-line { border-left: 3px solid #dc2626; padding: 0.35rem 0.75rem; margin: 0.25rem 0; background: #fff5f5; font-size: 0.85rem; }
-  .surface-line { border-left: 3px solid #d1d5db; padding: 0.35rem 0.75rem; margin: 0.25rem 0; background: #fafafa; font-size: 0.85rem; color: #4b5563; }
-  .wall { border: 1px solid #f59e0b; background: #fffbeb; padding: 0.75rem 1rem; border-radius: 6px; }
+  /* explicit colours so the boxes read in both Streamlit themes */
+  .hidden-line { border-left: 3px solid #dc2626; padding: 0.35rem 0.75rem; margin: 0.25rem 0; background: rgba(220,38,38,0.08); font-size: 0.85rem; }
+  .surface-line { border-left: 3px solid #9ca3af; padding: 0.35rem 0.75rem; margin: 0.25rem 0; background: rgba(156,163,175,0.12); font-size: 0.85rem; opacity: 0.9; }
+  .wall { border: 1px solid #f59e0b; background: rgba(245,158,11,0.12); padding: 0.75rem 1rem; border-radius: 6px; }
   .competitor-item { padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; }
 </style>
 """,
