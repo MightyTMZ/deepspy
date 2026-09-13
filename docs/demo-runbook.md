@@ -2,6 +2,36 @@
 
 Three beats, each one command. Run from the repo root in Git Bash with `MSYS_NO_PATHCONV=1` and `STEEL_API_KEY` set. Every command writes to `data/periscope.sqlite`; the scripts under `scripts/` read it back. Nothing here needs a Claude key; add `ANTHROPIC_API_KEY` to layer Stagehand on top.
 
+## The hook: Steel's own market
+
+The judges work at Steel, so the demo competitor set is Steel's five closest rivals in browser infrastructure: Browserbase, Hyperbrowser, Anchor Browser, Browserless and Kernel, pricing pages first. The frontend preloads them. One command per competitor from the CLI:
+
+```bash
+for c in "browserbase https://www.browserbase.com" "hyperbrowser https://www.hyperbrowser.ai" "anchor https://anchorbrowser.io" "browserless https://www.browserless.io" "kernel https://www.onkernel.com"; do set -- $c; MSYS_NO_PATHCONV=1 npx tsx src/run.ts --competitor $1 --url $2 --pages /pricing --jobs surface,benchmark,reveal --run-id demo-$1; done
+```
+
+Borders on the one with regional pricing:
+
+```bash
+MSYS_NO_PATHCONV=1 npx tsx src/run.ts --competitor browserbase --url https://www.browserbase.com --pages /pricing --jobs surface,borders --countries CA,US,DE --run-id demo-browserbase-borders
+```
+
+Or press Run in the frontend, which does the same through the API.
+
+## Frontend (API plus Streamlit)
+
+Two terminals. The API launches runs, holds the Steel pool and answers every read; the Streamlit app only talks to the API.
+
+```bash
+MSYS_NO_PATHCONV=1 STEEL_API_KEY=... npm run api
+```
+
+```bash
+pip install -r frontend/requirements.txt && streamlit run frontend/app.py
+```
+
+Open http://localhost:8501. Competitors on the right (ornn and spotify preloaded), Run on the left launches one run per competitor through `POST /runs`, the run view shows status, jobs, the red counter, the side by side, borders, prices, diff, matrix and events, and any wall appears under "Walls waiting for a human" with the live view link and a resume button. Without `STEEL_API_KEY` the API is read-only and the app browses earlier runs.
+
 ## Beat 1: side by side. Fetch versus Periscope
 
 Ornn regulatory page. Fetch returns the page; Periscope clicks the Legal tab and finds the SLA, the terms and four docx files.

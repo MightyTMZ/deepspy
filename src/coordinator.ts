@@ -275,14 +275,16 @@ export class Coordinator {
     try {
       // Deterministic Playwright strategies run first and need no model. Tom's Stagehand reveal is the fallback for
       // layouts the rules do not recognise, and only runs when a model key is configured.
-      const useModel = Boolean(process.env.ANTHROPIC_API_KEY);
-      const sh = useModel ? await createStagehand(handle) : undefined;
-      const page = sh?.page ?? handle.page;
+      const useModel = process.env.PERISCOPE_STAGEHAND === "1" && Boolean(process.env.ANTHROPIC_API_KEY); // opt in: Stagehand on Steel attaches (extension) but its page handling is not stable yet
+      // Stagehand attaches after the first navigation: connecting on about:blank leaves its extension without a page (verified live on Steel).
+      let sh: Awaited<ReturnType<typeof createStagehand>> | undefined;
+      const page = handle.page;
 
       try {
         for (const url of job.urls) {
           await page.goto(url, { waitUntil: "load", timeout: 60_000 });
           await page.waitForTimeout(1000);
+          if (useModel && !sh) sh = await createStagehand(handle).catch((e: Error) => { console.warn(`[stagehand] unavailable, continuing without a model: ${e.message.split(String.fromCharCode(10))[0]}`); return undefined; });
 
           // Get surface baseline for this URL
           const surfaceResult = await scrapeSurface({
@@ -347,8 +349,9 @@ export class Coordinator {
 
     try {
       // Without a model key the deterministic walker (segment C) crawls links; with one, Tom's Stagehand walker operates controls.
-      const useModel = Boolean(process.env.ANTHROPIC_API_KEY);
-      const sh = useModel ? await createStagehand(handle) : undefined;
+      const useModel = process.env.PERISCOPE_STAGEHAND === "1" && Boolean(process.env.ANTHROPIC_API_KEY); // opt in: Stagehand on Steel attaches (extension) but its page handling is not stable yet
+      if (useModel) await handle.page.goto(job.urls[0], { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => undefined); // Stagehand needs a real page before it attaches
+      const sh = useModel ? await createStagehand(handle).catch((e: Error) => { console.warn(`[stagehand] unavailable, continuing without a model: ${e.message.split(String.fromCharCode(10))[0]}`); return undefined; }) : undefined;
       const page = sh?.page ?? handle.page;
       const stagehand = sh?.stagehand;
 

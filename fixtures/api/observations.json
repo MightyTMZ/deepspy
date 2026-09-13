@@ -1,0 +1,131 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs/run-saturday/observations?q=legal&limit=5"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "runId": "run-saturday",
+    "total": 5,
+    "observations": [
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Acceptable Use Policy",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "text",
+        "text": "Acceptable Use Policy",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:56:33.076Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "steelSessionId": "sess-1",
+        "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+      },
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Legal",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "surface",
+        "source": "browser",
+        "kind": "text",
+        "text": "Legal",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:56:33.076Z"
+      },
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Service Level Agreement",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "text",
+        "text": "Service Level Agreement",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:56:33.076Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "steelSessionId": "sess-1",
+        "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+      },
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|Terms of Service",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "text",
+        "text": "Terms of Service",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:56:33.076Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "steelSessionId": "sess-1",
+        "viewerUrl": "https://app.steel.dev/sessions/sess-1"
+      },
+      {
+        "id": "run-saturday|run-saturday-reveal|https://ornn.com/regulatory|\"\"|https://ornn.com/docs/ornn-sla.docx",
+        "runId": "run-saturday",
+        "jobId": "run-saturday-reveal",
+        "competitor": "ornn",
+        "url": "https://ornn.com/regulatory",
+        "layer": "hidden",
+        "source": "browser",
+        "kind": "document",
+        "text": "https://ornn.com/docs/ornn-sla.docx",
+        "vantage": {
+          "country": null,
+          "device": "desktop",
+          "authenticated": false
+        },
+        "perception": "dom",
+        "capturedAt": "2026-09-13T10:56:33.077Z",
+        "missedByFetch": true,
+        "revealedBy": {
+          "action": "click",
+          "label": "Legal"
+        },
+        "screenshotPath": "data/walls/example.png"
+      }
+    ]
+  }
+}

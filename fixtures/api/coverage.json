@@ -31,9 +31,9 @@
         "vantages": [
           "CA/desktop",
           "CA/mobile",
+          "US/desktop",
           "DE/desktop",
           "DE/mobile",
-          "US/desktop",
           "US/mobile"
         ],
         "byAction": {},

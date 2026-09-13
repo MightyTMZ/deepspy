@@ -1,164 +1,142 @@
 """
-Periscope — Streamlit frontend.
+Periscope, Streamlit frontend over the Periscope API (docs/api.md).
 
-Reads directly from the SQLite database written by the Node.js backend.
-Provides: competitor list management, run triggering, live progress, and
-semantic chat over the observation corpus.
+Start the API first:   npm run api            (port 4747, needs STEEL_API_KEY to launch runs)
+Then this app:         streamlit run frontend/app.py
+Point at another API:  PERISCOPE_API_URL=http://host:4747 streamlit run frontend/app.py
+
+The app never touches SQLite or Steel itself. Every number on screen comes from an API response,
+so the same screens work against fixtures/api/*.json for design work.
 """
 
 import json
 import os
-import sqlite3
-import subprocess
+import re
 import time
+import uuid
 from pathlib import Path
 
+import requests
 import streamlit as st
 
-# ---------------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------------
-
+API = os.environ.get("PERISCOPE_API_URL", "http://localhost:4747").rstrip("/")
 DATA_DIR = os.environ.get("PERISCOPE_DATA_DIR", str(Path(__file__).resolve().parent.parent / "data"))
-DB_PATH = os.path.join(DATA_DIR, "periscope.sqlite")
 COMPETITORS_FILE = os.path.join(DATA_DIR, "competitors.json")
 DEVICE_PASSWORD = os.environ.get("PERISCOPE_PASSWORD", "")
+TERMINAL = {"completed", "failed", "cancelled", "partial"}
 
 st.set_page_config(page_title="Periscope", layout="wide")
-
-# ---------------------------------------------------------------------------
-# Minimal custom CSS — clean, restrained styling
-# ---------------------------------------------------------------------------
-
-st.markdown("""
+st.markdown(
+    """
 <style>
-    /* Remove default Streamlit top padding */
-    .block-container { padding-top: 2rem; }
-
-    /* Competitor list items */
-    .competitor-item {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #e2e2e2;
-        font-family: 'SF Mono', 'Fira Code', monospace;
-        font-size: 0.9rem;
-        color: #1a1a1a;
-    }
-
-    /* Progress log */
-    .progress-log {
-        font-family: 'SF Mono', 'Fira Code', monospace;
-        font-size: 0.8rem;
-        line-height: 1.6;
-        color: #404040;
-    }
-
-    /* Chat messages */
-    .chat-observation {
-        padding: 0.75rem 1rem;
-        margin-bottom: 0.5rem;
-        border-left: 3px solid #16a34a;
-        background: #fafafa;
-        font-size: 0.85rem;
-        line-height: 1.5;
-    }
-    .chat-observation .meta {
-        font-size: 0.75rem;
-        color: #888;
-        margin-bottom: 0.25rem;
-    }
+  .block-container { padding-top: 1.5rem; }
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; }
+  .muted { color: #6b7280; font-size: 0.85rem; }
+  .counter { font-size: 3rem; font-weight: 800; color: #dc2626; line-height: 1; }
+  .counter-label { color: #6b7280; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  /* explicit colours so the boxes read in both Streamlit themes */
+  .hidden-line { border-left: 3px solid #dc2626; padding: 0.35rem 0.75rem; margin: 0.25rem 0; background: rgba(220,38,38,0.08); font-size: 0.85rem; }
+  .surface-line { border-left: 3px solid #9ca3af; padding: 0.35rem 0.75rem; margin: 0.25rem 0; background: rgba(156,163,175,0.12); font-size: 0.85rem; opacity: 0.9; }
+  .wall { border: 1px solid #f59e0b; background: rgba(245,158,11,0.12); padding: 0.75rem 1rem; border-radius: 6px; }
+  .competitor-item { padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ---------------------------------------------------------------------------
-# Helpers — SQLite reads (read-only, WAL-safe)
+# API client
 # ---------------------------------------------------------------------------
 
-def get_db() -> sqlite3.Connection | None:
-    """Open a read-only connection to the Periscope database."""
-    if not os.path.exists(DB_PATH):
-        return None
-    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def load_runs(conn: sqlite3.Connection) -> list[dict]:
+def api_get(path: str, **params):
     try:
-        rows = conn.execute(
-            "SELECT id, status, goal, cap_micro_usd, spent_micro_usd, created_at, completed_at, reason "
-            "FROM runs ORDER BY created_at DESC LIMIT 50"
-        ).fetchall()
-        return [dict(r) for r in rows]
-    except Exception:
-        return []
+        r = requests.get(f"{API}{path}", params=params or None, timeout=15)
+        return r.status_code, r.json()
+    except requests.RequestException as e:
+        return 0, {"ok": False, "reason": str(e)}
 
 
-def load_jobs(conn: sqlite3.Connection, run_id: str) -> list[dict]:
+def api_post(path: str, body: dict | None = None, headers: dict | None = None):
     try:
-        rows = conn.execute(
-            "SELECT id, purpose, kind, competitor, url, state, reason, created_at "
-            "FROM jobs WHERE run_id = ? ORDER BY created_at",
-            (run_id,),
-        ).fetchall()
-        return [dict(r) for r in rows]
-    except Exception:
-        return []
+        r = requests.post(f"{API}{path}", json=body or {}, headers=headers or {}, timeout=30)
+        return r.status_code, r.json()
+    except requests.RequestException as e:
+        return 0, {"ok": False, "reason": str(e)}
 
 
-def load_events(conn: sqlite3.Connection, run_id: str, limit: int = 100) -> list[dict]:
-    try:
-        rows = conn.execute(
-            "SELECT event_id, run_id, job_id, type, created_at, payload "
-            "FROM events WHERE run_id = ? ORDER BY event_id DESC LIMIT ?",
-            (run_id, limit),
-        ).fetchall()
-        return [dict(r) for r in rows]
-    except Exception:
-        return []
+def api_health():
+    code, body = api_get("/health")
+    return body if code == 200 else None
 
 
-def load_observations(conn: sqlite3.Connection, run_id: str, competitor: str | None = None) -> list[dict]:
-    try:
-        query = "SELECT * FROM observations WHERE run_id = ?"
-        params: list = [run_id]
-        if competitor:
-            query += " AND competitor = ?"
-            params.append(competitor)
-        query += " ORDER BY captured_at DESC LIMIT 200"
-        rows = conn.execute(query, params).fetchall()
-        return [dict(r) for r in rows]
-    except Exception:
-        return []
+PRICE_LIKE = re.compile(r"[$€£]\s?\d|\d+\s?(€|/1k|per |/GB|/hr|/hour|/min|credits|seats?)", re.I)
 
 
-def count_observations(conn: sqlite3.Connection, run_id: str) -> int:
-    try:
-        row = conn.execute("SELECT COUNT(*) AS n FROM observations WHERE run_id = ?", (run_id,)).fetchone()
-        return row["n"] if row else 0
-    except Exception:
-        return 0
+def latest_run_per_competitor(runs: list[dict]) -> dict[str, dict]:
+    """Newest finished run with observations for each competitor (runs come newest first)."""
+    out: dict[str, dict] = {}
+    for r in runs:
+        if r.get("status") not in ("completed", "partial") or not r.get("observations"):
+            continue
+        if "reveal" not in r.get("purposes", ["reveal"]):
+            continue  # a borders-only or walker-only run has no side by side to show
+        for comp in r.get("competitors", []):
+            out.setdefault(comp, r)
+    return out
 
 
-def get_competitors_from_db(conn: sqlite3.Connection) -> list[str]:
-    try:
-        rows = conn.execute("SELECT DISTINCT competitor FROM observations ORDER BY competitor").fetchall()
-        return [r["competitor"] for r in rows]
-    except Exception:
-        return []
+def market_rows(runs: list[dict], names: list[str]) -> list[dict]:
+    """One row per competitor: counter, the lines a fetch tool never returned, time. All from the API."""
+    latest = latest_run_per_competitor(runs)
+    rows = []
+    for name in names:
+        r = latest.get(name)
+        if not r:
+            rows.append({"competitor": name, "run": None})
+            continue
+        _, cov = api_get(f"/runs/{r['id']}/coverage")
+        pages = cov.get("pages", []) if isinstance(cov, dict) else []
+        page = pages[0] if pages else {}
+        _, hid = api_get(f"/runs/{r['id']}/observations", layer="hidden", missedByFetch=1, limit=120)
+        lines = [o for o in hid.get("observations", []) if o.get("kind") in ("text", "document", "option")]
+        priced = [o for o in lines if PRICE_LIKE.search(o["text"])]
+        # prices first, then lines revealed by a click on the page itself, third-party iframes last
+        rest = [o for o in lines if o not in priced]
+        own = [o for o in rest if not str((o.get("revealedBy") or {}).get("label", "")).startswith("iframe")]
+        picks = (priced + own + [o for o in rest if o not in own])[:3]
+        seconds = None
+        try:
+            from datetime import datetime
+            a = datetime.fromisoformat(r["createdAt"].replace("Z", "+00:00"))
+            b = datetime.fromisoformat((r.get("completedAt") or r["updatedAt"]).replace("Z", "+00:00"))
+            seconds = int((b - a).total_seconds())
+        except Exception:
+            pass
+        rows.append({
+            "competitor": name, "run": r["id"], "url": page.get("url", ""), "counter": page.get("counter", page.get("missedByFetch", 0)),
+            "surface": page.get("surface", 0), "hidden": page.get("hidden", 0), "documents": page.get("documents", 0),
+            "priced": len(priced), "picks": picks, "seconds": seconds,
+            "actions": sorted(page.get("byAction", {}).items(), key=lambda kv: -kv[1])[:3],
+        })
+    return rows
 
 
 # ---------------------------------------------------------------------------
-# Competitor list persistence (JSON file, separate from SQLite)
+# Competitor list (JSON file next to the database)
 # ---------------------------------------------------------------------------
 
 def load_competitors() -> list[dict]:
-    """Load competitor list. Each entry: { name, url, pages }."""
     if os.path.exists(COMPETITORS_FILE):
         with open(COMPETITORS_FILE) as f:
             return json.load(f)
+    # Demo set: Steel's five closest competitors in browser infrastructure, pricing pages first.
     return [
-        {"name": "example", "url": "https://example.com", "pages": ["/"]},
+        {"name": "browserbase", "url": "https://www.browserbase.com", "pages": ["/pricing"]},
+        {"name": "hyperbrowser", "url": "https://www.hyperbrowser.ai", "pages": ["/pricing"]},
+        {"name": "anchor", "url": "https://anchorbrowser.io", "pages": ["/pricing"]},
+        {"name": "browserless", "url": "https://www.browserless.io", "pages": ["/pricing"]},
+        {"name": "kernel", "url": "https://www.onkernel.com", "pages": ["/pricing"]},
     ]
 
 
@@ -169,404 +147,362 @@ def save_competitors(competitors: list[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Session state init
+# State
 # ---------------------------------------------------------------------------
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "editing" not in st.session_state:
-    st.session_state.editing = False
-if "running" not in st.session_state:
-    st.session_state.running = False
-if "active_run_id" not in st.session_state:
-    st.session_state.active_run_id = None
-if "chat_messages" not in st.session_state:
-    st.session_state.chat_messages = []
+for key, default in {"editing": False, "active_runs": [], "chat_messages": [], "live": True}.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
 
+health = api_health()
 
 # ---------------------------------------------------------------------------
 # Header
 # ---------------------------------------------------------------------------
 
-st.markdown(
-    '<h1 style="color: #16a34a; font-weight: 800; font-size: 2.5rem; '
-    'margin-bottom: 0.25rem;">Periscope</h1>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    '<p style="color: #6b7280; font-size: 0.9rem; margin-top: 0;">'
-    "Competitive intelligence — read what websites hide.</p>",
-    unsafe_allow_html=True,
-)
+st.markdown('<h1 style="color:#16a34a;font-weight:800;font-size:2.4rem;margin-bottom:0.1rem;">Periscope</h1>', unsafe_allow_html=True)
+st.markdown('<p class="muted" style="margin-top:0">Every research tool reads what a website serves. Periscope reads what a website hides. Demo set: the browser-infrastructure market, seen from Steel.</p>', unsafe_allow_html=True)
+if not health:
+    st.error(f"API not reachable at {API}. Start it with `npm run api` (set PERISCOPE_API_URL to point elsewhere).")
+    st.stop()
+if not health.get("steel"):
+    st.warning("API is running without STEEL_API_KEY: results from earlier runs are browsable, new runs cannot be launched.")
 
 st.divider()
-
-# ---------------------------------------------------------------------------
-# Layout: left = controls + progress, right = competitor list
-# ---------------------------------------------------------------------------
-
 left_col, right_col = st.columns([3, 2], gap="large")
 
-# ---- RIGHT COLUMN: Competitor list ----------------------------------------
+# ---------------------------------------------------------------------------
+# Right: competitors
+# ---------------------------------------------------------------------------
 
 with right_col:
     st.markdown("##### Competitors")
-
     competitors = load_competitors()
-
-    # Edit / lock toggle
-    col_edit, col_spacer = st.columns([1, 3])
-    with col_edit:
+    c_edit, _ = st.columns([1, 3])
+    with c_edit:
         if not st.session_state.editing:
             if st.button("Edit", use_container_width=True):
-                if DEVICE_PASSWORD:
-                    st.session_state.editing = "pending_auth"
-                    st.rerun()
-                else:
-                    st.session_state.editing = True
-                    st.rerun()
+                st.session_state.editing = "pending_auth" if DEVICE_PASSWORD else True
+                st.rerun()
         else:
             if st.button("Lock", use_container_width=True):
                 st.session_state.editing = False
-                st.session_state.authenticated = False
                 st.rerun()
 
-    # Password gate
     if st.session_state.editing == "pending_auth":
         pw = st.text_input("Password", type="password", key="pw_input")
         if st.button("Unlock"):
             if pw == DEVICE_PASSWORD:
-                st.session_state.authenticated = True
                 st.session_state.editing = True
                 st.rerun()
             else:
                 st.error("Incorrect password.")
 
-    # Display / edit competitor list
     if st.session_state.editing is True:
-        st.caption("Add, edit, or remove competitors. Click **Lock** when done.")
-
+        st.caption("Add, edit, or remove competitors. Click Lock when done.")
         updated = []
         for i, comp in enumerate(competitors):
-            with st.container():
-                c1, c2, c3 = st.columns([2, 3, 1])
-                with c1:
-                    name = st.text_input("Name", value=comp["name"], key=f"name_{i}", label_visibility="collapsed")
-                with c2:
-                    url = st.text_input("URL", value=comp["url"], key=f"url_{i}", label_visibility="collapsed")
-                with c3:
-                    remove = st.button("Remove", key=f"rm_{i}")
-                if not remove:
-                    pages_str = st.text_input(
-                        "Pages (comma-separated)",
-                        value=",".join(comp.get("pages", ["/"])),
-                        key=f"pages_{i}",
-                        label_visibility="collapsed",
-                    )
-                    updated.append({
-                        "name": name,
-                        "url": url,
-                        "pages": [p.strip() for p in pages_str.split(",") if p.strip()],
-                    })
-
+            c1, c2, c3 = st.columns([2, 3, 1])
+            with c1:
+                name = st.text_input("Name", value=comp["name"], key=f"name_{i}", label_visibility="collapsed")
+            with c2:
+                url = st.text_input("URL", value=comp["url"], key=f"url_{i}", label_visibility="collapsed")
+            with c3:
+                remove = st.button("Remove", key=f"rm_{i}")
+            if not remove:
+                pages_str = st.text_input("Pages", value=",".join(comp.get("pages", ["/"])), key=f"pages_{i}", label_visibility="collapsed")
+                updated.append({"name": name, "url": url, "pages": [p.strip() for p in pages_str.split(",") if p.strip()]})
         if st.button("+ Add competitor"):
             competitors.append({"name": "", "url": "https://", "pages": ["/"]})
             save_competitors(competitors)
             st.rerun()
-
-        # Auto-save on any change
         if updated != competitors:
             save_competitors(updated)
     else:
-        # Read-only display
-        if not competitors:
-            st.info("No competitors configured yet.")
         for comp in competitors:
-            pages_display = ", ".join(comp.get("pages", ["/"]))
             st.markdown(
-                f'<div class="competitor-item">'
-                f'<strong>{comp["name"]}</strong> &mdash; '
-                f'<span style="color:#6b7280">{comp["url"]}</span>'
-                f'<br><span style="font-size:0.75rem;color:#999">pages: {pages_display}</span>'
-                f"</div>",
+                f'<div class="competitor-item"><strong>{comp["name"]}</strong> <span class="muted">{comp["url"]}</span>'
+                f'<br><span class="muted">pages: {", ".join(comp.get("pages", ["/"]))}</span></div>',
                 unsafe_allow_html=True,
             )
 
+    # Human in the loop: pending walls from every run
+    st.markdown("##### Walls waiting for a human")
+    _, hand = api_get("/handoffs")
+    handoffs = hand.get("handoffs", []) if isinstance(hand, dict) else []
+    if not handoffs:
+        st.caption("None. A CAPTCHA, login, 2FA or payment page will appear here with a live view link.")
+    for h in handoffs:
+        st.markdown(
+            f'<div class="wall"><strong>{h["wall"]}</strong> on job <span class="mono">{h["jobId"][:8]}</span> '
+            f'(generation {h["generation"]})<br><a href="{h["viewerUrl"]}" target="_blank">Open the live view and clear it</a></div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("I cleared it, resume", key=f"resume_{h['jobId']}"):
+            code, body = api_post(f"/jobs/{h['jobId']}/resume", {"generation": h["generation"]})
+            if code == 200:
+                st.success("Resumed in the same session.")
+            else:
+                st.error(body.get("reason", "resume failed"))
+            st.rerun()
 
-# ---- LEFT COLUMN: Run controls + progress + chat -------------------------
+# ---------------------------------------------------------------------------
+# Left: run controls
+# ---------------------------------------------------------------------------
 
 with left_col:
-
-    # --- Run button ---
-    run_disabled = not competitors or all(not c.get("url") for c in competitors)
-
-    col_run, col_opts = st.columns([1, 3])
-    with col_run:
-        run_clicked = st.button(
-            "Run",
-            type="primary",
-            disabled=run_disabled,
-            use_container_width=True,
-        )
-    with col_opts:
-        countries_input = st.text_input(
-            "Countries",
-            value="CA,US,DE",
-            help="Comma-separated ISO country codes for border testing",
-            label_visibility="collapsed",
-            placeholder="Countries (e.g. CA,US,DE)",
-        )
-        cap_usd = st.number_input("Budget cap ($)", min_value=1, max_value=100, value=12, label_visibility="collapsed")
+    run_disabled = not competitors or all(not c.get("url") for c in competitors) or not health.get("steel")
+    c_run, c_jobs, c_countries, c_cap = st.columns([1, 2, 2, 1])
+    with c_run:
+        run_clicked = st.button("Run", type="primary", disabled=run_disabled, use_container_width=True)
+    with c_jobs:
+        jobs = st.multiselect("Jobs", ["surface", "benchmark", "reveal", "borders"], default=["surface", "benchmark", "reveal", "borders"], label_visibility="collapsed")
+    with c_countries:
+        countries_input = st.text_input("Countries", value="CA,US,DE", label_visibility="collapsed", placeholder="CA,US,DE")
+    with c_cap:
+        cap_usd = st.number_input("Cap $", min_value=1, max_value=100, value=12, label_visibility="collapsed")
 
     if run_clicked:
-        st.session_state.running = True
-        run_id = f"run-{int(time.time())}"
-        st.session_state.active_run_id = run_id
-        st.session_state.chat_messages = []
-
-        # Launch backend process for each competitor
-        processes = []
+        batch = uuid.uuid4().hex[:6]
+        started = []
         for comp in competitors:
-            if not comp.get("url"):
+            if not comp.get("url") or not comp.get("name"):
                 continue
-            pages = ",".join(comp.get("pages", ["/"]))
-            cmd = [
-                "npx", "tsx", "src/run.ts",
-                "--competitor", comp["name"],
-                "--url", comp["url"],
-                "--pages", pages,
-                "--jobs", "surface,benchmark,reveal",
-                "--countries", countries_input.strip(),
-                "--cap", str(cap_usd),
-                "--run-id", run_id,
-            ]
-            env = {**os.environ, "PERISCOPE_DATA_DIR": DATA_DIR}
-            try:
-                proc = subprocess.Popen(
-                    cmd,
-                    cwd=str(Path(__file__).resolve().parent.parent),
-                    env=env,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                )
-                processes.append((comp["name"], proc))
-            except FileNotFoundError:
-                st.error(f"Could not start backend for {comp['name']}. Is Node.js installed?")
-
-        if processes:
-            st.info(f"Started run `{run_id}` for {len(processes)} competitor(s).")
-
-    # --- Live progress ---
-    conn = get_db()
-
-    if conn and st.session_state.active_run_id:
-        run_id = st.session_state.active_run_id
-        run_info = None
-        try:
-            row = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
-            if row:
-                run_info = dict(row)
-        except Exception:
-            pass
-
-        if run_info:
-            st.markdown("##### Progress")
-
-            # Status bar
-            status = run_info.get("status", "unknown")
-            spent = run_info.get("spent_micro_usd", 0) / 1_000_000
-            cap = run_info.get("cap_micro_usd", 0) / 1_000_000
-            obs_count = count_observations(conn, run_id)
-
-            status_color = {
-                "queued": "#6b7280",
-                "running": "#2563eb",
-                "completed": "#16a34a",
-                "partial": "#d97706",
-                "failed": "#dc2626",
-                "cancelled": "#6b7280",
-            }.get(status, "#6b7280")
-
-            st.markdown(
-                f'<span style="color:{status_color}; font-weight:600; font-size:0.9rem;">'
-                f'{status.upper()}</span>'
-                f' &nbsp; {obs_count} observations &nbsp; ${spent:.2f} / ${cap:.2f}',
-                unsafe_allow_html=True,
+            run_id = f"{comp['name']}-{time.strftime('%m%d-%H%M%S')}-{batch}"
+            code, body = api_post(
+                "/runs",
+                {"runId": run_id, "competitor": comp["name"], "url": comp["url"], "pages": comp.get("pages", ["/"]), "jobs": jobs,
+                 "countries": [c.strip() for c in countries_input.split(",") if c.strip()], "capUsd": cap_usd, "category": "demo"},
+                headers={"Idempotency-Key": f"{batch}-{comp['name']}"},
             )
+            if code in (200, 202):
+                started.append(body["runId"])
+            else:
+                st.error(f"{comp['name']}: {body.get('reason', code)}")
+        if started:
+            st.session_state.active_runs = started
+            st.session_state.chat_messages = []
+            st.success(f"Started {len(started)} run(s).")
+            st.rerun()
 
-            # Jobs table
-            jobs = load_jobs(conn, run_id)
-            if jobs:
-                for job in jobs:
-                    state = job["state"]
-                    indicator = {
-                        "queued": "[ ]",
-                        "starting": "[.]",
-                        "running": "[~]",
-                        "awaiting_human": "[!]",
-                        "finalizing": "[~]",
-                        "completed": "[x]",
-                        "partial": "[/]",
-                        "failed": "[-]",
-                    }.get(state, "[ ]")
-
-                    purpose = job.get("kind") or job.get("purpose", "")
-                    comp = job.get("competitor", "")
-                    reason = f' — {job["reason"]}' if job.get("reason") else ""
-
+    # ---------------- market: latest run per competitor ----------------
+    _, runs_body = api_get("/runs", limit=100)
+    all_runs = runs_body.get("runs", []) if isinstance(runs_body, dict) else []
+    if not st.session_state.active_runs and all_runs:
+        names = [c["name"] for c in competitors if c.get("name")]
+        rows = market_rows(all_runs, names)
+        if any(r.get("run") for r in rows):
+            st.markdown("##### The market, seen from Steel")
+            st.markdown('<span class="muted">Latest run per competitor. The red number is what a fetch tool never returned on that page.</span>', unsafe_allow_html=True)
+            for r in rows:
+                if not r.get("run"):
+                    st.markdown(f'<div class="mono"><strong>{r["competitor"]}</strong> <span class="muted">not run yet</span></div>', unsafe_allow_html=True)
+                    continue
+                c_num, c_body, c_btn = st.columns([1, 6, 1])
+                with c_num:
+                    st.markdown(f'<div class="counter">{r["counter"]}</div><div class="counter-label">missed by fetch</div>', unsafe_allow_html=True)
+                with c_body:
+                    via = ", ".join(f"{k} ({v})" for k, v in r["actions"]) or "no action needed"
+                    docs = f", {r['documents']} documents" if r["documents"] else ""
                     st.markdown(
-                        f'<div class="progress-log">'
-                        f"{indicator} <strong>{purpose}</strong> {comp}{reason}"
-                        f"</div>",
+                        f'<strong>{r["competitor"]}</strong> <span class="mono muted">{r["url"]}</span><br>'
+                        f'<span class="muted">fetch saw {r["surface"]} lines · Periscope revealed {r["hidden"]} more, {r["priced"]} of them prices'
+                        f'{docs} · {r["seconds"]} s · via {via}</span>',
                         unsafe_allow_html=True,
                     )
-
-            # Event log (recent)
-            with st.expander("Event log", expanded=False):
-                events = load_events(conn, run_id, limit=50)
-                for evt in events:
-                    try:
-                        payload = json.loads(evt["payload"])
-                    except (json.JSONDecodeError, TypeError):
-                        payload = {}
-                    etype = evt["type"]
-                    ts = evt["created_at"]
-                    summary = ""
-                    if etype == "job_state":
-                        summary = f'{payload.get("state", "")} job {str(payload.get("jobId", ""))[:8]}'
-                    elif etype == "observation":
-                        text = str(payload.get("text", ""))[:80]
-                        summary = f'{payload.get("kind", "")} — {text}'
-                    elif etype == "spend":
-                        summary = f'${payload.get("usd", 0):.3f}'
-                    elif etype == "handoff":
-                        summary = f'{payload.get("state", "")} {payload.get("wall", "")}'
-                    else:
-                        summary = etype
-
-                    st.markdown(
-                        f'<div class="progress-log">'
-                        f'<span style="color:#999">{ts}</span> '
-                        f'<span style="color:#2563eb">{etype}</span> {summary}'
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
-
-            # Refresh button
-            if status in ("queued", "running", "starting"):
-                if st.button("Refresh"):
-                    st.rerun()
-
+                    for o in r["picks"]:
+                        label = (o.get("revealedBy") or {}).get("label") or ""
+                        st.markdown(f'<div class="hidden-line">{o["text"][:150]}<span class="muted"> · {label}</span></div>', unsafe_allow_html=True)
+                with c_btn:
+                    if st.button("Open", key=f"market_{r['run']}"):
+                        st.session_state.active_runs = [r["run"]]
+                        st.session_state.chat_messages = []
+                        st.rerun()
             st.divider()
 
-        # --- Chat interface (available once observations exist) ---
-        if run_info and count_observations(conn, run_id) > 0:
-            st.markdown("##### Query Research")
+    # ---------------- run picker ----------------
+    if not st.session_state.active_runs and all_runs:
+        st.markdown("##### All runs")
+        for r in all_runs[:15]:
+            c_info, c_btn = st.columns([5, 1])
+            with c_info:
+                st.markdown(
+                    f'<span class="mono">{r["id"]}</span> <span class="muted">{", ".join(r.get("competitors", []))}</span> '
+                    f'&nbsp; <strong>{r["status"]}</strong> &nbsp; {r["observations"]} observations &nbsp; ${r["spentUsd"]:.2f}',
+                    unsafe_allow_html=True,
+                )
+            with c_btn:
+                if st.button("Open", key=f"open_{r['id']}"):
+                    st.session_state.active_runs = [r["id"]]
+                    st.session_state.chat_messages = []
+                    st.rerun()
 
-            # Competitor selector
-            db_competitors = get_competitors_from_db(conn)
-            selected_competitor = st.selectbox(
-                "Competitor",
-                options=["All"] + db_competitors,
-                label_visibility="collapsed",
-            )
+    # ---------------- active run(s) ----------------
+    any_live = False
+    for run_id in st.session_state.active_runs:
+        code, view = api_get(f"/runs/{run_id}")
+        if code != 200:
+            st.warning(f"{run_id}: {view.get('reason', code)}")
+            continue
+        run = view["run"]
+        status = run["status"]
+        if status not in TERMINAL or run.get("live"):
+            any_live = True
 
-            # Chat display
-            for msg in st.session_state.chat_messages:
-                with st.chat_message(msg["role"]):
-                    st.markdown(msg["content"], unsafe_allow_html=True)
+        st.markdown(f"##### Run <span class='mono'>{run_id}</span>", unsafe_allow_html=True)
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Status", status.upper()[:9])
+        m2.metric("Observations", view["counts"]["observations"])
+        m3.metric("Spend", f"${run['spentUsd']:.2f} of ${run['capUsd']:.0f}")
+        # one counter per page: the latest value wins (borders emits one per vantage for the same url)
+        latest = {}
+        for c in view["counters"]:
+            latest[c["url"]] = c["missed"]
+        if any(v == "uncertain" for v in latest.values()):
+            m4.metric("Missed by fetch", "uncertain")
+        else:
+            m4.metric("Missed by fetch", sum(v for v in latest.values() if isinstance(v, int)) if latest else "-")
 
-            # Chat input
-            if query := st.chat_input("Ask about the research findings..."):
-                st.session_state.chat_messages.append({"role": "user", "content": query})
+        for job in view["jobs"]:
+            mark = {"queued": "[ ]", "starting": "[.]", "running": "[~]", "awaiting_human": "[!]", "finalizing": "[~]", "completed": "[x]", "partial": "[/]", "failed": "[-]", "cancelled": "[-]"}.get(job["state"], "[ ]")
+            reason = f' <span class="muted">{job["reason"]}</span>' if job.get("reason") else ""
+            st.markdown(f'<div class="mono">{mark} {job["purpose"]} {job.get("competitor") or ""} <span class="muted">{job.get("url") or ""}</span>{reason}</div>', unsafe_allow_html=True)
 
-                with st.chat_message("user"):
-                    st.markdown(query)
+        if status not in TERMINAL:
+            if st.button("Cancel queued jobs", key=f"cancel_{run_id}"):
+                api_post(f"/runs/{run_id}/cancel")
+                st.rerun()
 
-                # Search observations via simple text matching (SQLite FTS fallback)
-                # When Qdrant is available, this should use the Corpus.searchHydrated method
-                comp_filter = None if selected_competitor == "All" else selected_competitor
-                observations = load_observations(conn, run_id, comp_filter)
+        tab_side, tab_borders, tab_prices, tab_diff, tab_matrix, tab_events = st.tabs(["Side by side", "Borders", "Prices", "Diff", "Matrix", "Events"])
 
-                # Simple keyword search as fallback
-                query_lower = query.lower()
-                relevant = [
-                    obs for obs in observations
-                    if query_lower in str(obs.get("text", "")).lower()
-                       or query_lower in str(obs.get("competitor", "")).lower()
-                       or query_lower in str(obs.get("url", "")).lower()
-                ][:20]
+        with tab_side:
+            _, cov = api_get(f"/runs/{run_id}/coverage")
+            for page in cov.get("pages", []):
+                counter = page.get("counter")
+                a, b = st.columns([1, 3])
+                with a:
+                    st.markdown(f'<div class="counter">{counter}</div><div class="counter-label">missed by fetch</div>', unsafe_allow_html=True)
+                with b:
+                    st.markdown(f'<span class="mono">{page["url"]}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span class="muted">fetch tool saw {page["surface"]} lines. Periscope revealed {page["hidden"]} more, {page["documents"]} of them documents, from {", ".join(page["vantages"])}</span>', unsafe_allow_html=True)
+                    actions = ", ".join(f"{k} ({v})" for k, v in sorted(page["byAction"].items(), key=lambda kv: -kv[1])[:5])
+                    if actions:
+                        st.markdown(f'<span class="muted">revealed by: {actions}</span>', unsafe_allow_html=True)
+                _, hidden = api_get(f"/runs/{run_id}/observations", layer="hidden", missedByFetch=1, limit=40)
+                left, right = st.columns(2)
+                with left:
+                    st.caption("What a fetch tool returns")
+                    _, surf = api_get(f"/runs/{run_id}/observations", layer="surface", limit=12)
+                    for o in [x for x in surf.get("observations", []) if x["url"] == page["url"]][:12]:
+                        st.markdown(f'<div class="surface-line">{o["text"][:140]}</div>', unsafe_allow_html=True)
+                with right:
+                    st.caption("What Periscope found behind clicks")
+                    for o in [x for x in hidden.get("observations", []) if x["url"] == page["url"]][:12]:
+                        via = (o.get("revealedBy") or {}).get("label") or (o.get("revealedBy") or {}).get("action") or ""
+                        st.markdown(f'<div class="hidden-line">{o["text"][:140]}<br><span class="muted">via {via} · {o["kind"]}</span></div>', unsafe_allow_html=True)
+            if not cov.get("pages"):
+                st.caption("No pages yet.")
 
-                if not relevant:
-                    # Show most recent observations if no keyword match
-                    relevant = observations[:10]
+        with tab_borders:
+            _, bg = api_get(f"/runs/{run_id}/borders")
+            for grid in bg.get("grids", []):
+                st.markdown(f'<span class="mono">{grid["url"]}</span> &nbsp; differs by country: <strong>{grid["differsByCountry"]}</strong> &nbsp; by device: <strong>{grid["differsByDevice"]}</strong> &nbsp; shared lines: {grid["shared"]}', unsafe_allow_html=True)
+                cols = st.columns(max(1, len(grid["countries"])))
+                for col, country in zip(cols, grid["countries"]):
+                    with col:
+                        st.markdown(f"**{country['country']}**")
+                        for p in country["prices"][:8]:
+                            st.markdown(f'<div class="hidden-line">{p[:120]}</div>', unsafe_allow_html=True)
+                        for line in [l for l in country["uniqueToCountry"] if l not in country["prices"]][:4]:
+                            st.markdown(f'<div class="surface-line">{line[:120]}</div>', unsafe_allow_html=True)
+                st.dataframe([{"vantage": v["key"], "lines": v["total"], "unique": len(v["unique"]), "prices": len(v["prices"])} for v in grid["vantages"]], use_container_width=True, hide_index=True)
+            if not bg.get("grids"):
+                st.caption("No borders job in this run.")
 
-                # Format response
-                with st.chat_message("assistant"):
-                    if relevant:
-                        response_parts = [f"Found **{len(relevant)}** relevant observations:\n"]
-                        for obs in relevant:
-                            text = str(obs.get("text", ""))
-                            if len(text) > 200:
-                                text = text[:200] + "..."
-                            layer = obs.get("layer", "")
-                            kind = obs.get("kind", "")
-                            url = obs.get("url", "")
-                            comp = obs.get("competitor", "")
+        with tab_prices:
+            _, pr = api_get(f"/runs/{run_id}/prices")
+            rows = pr.get("rows", [])
+            if rows:
+                st.dataframe([{"country": r["country"] or "-", "device": r["device"], "amount": r["amount"], "currency": r["currency"], "period": r["period"], "text": r["text"][:100], "layer": r["layer"]} for r in rows], use_container_width=True, hide_index=True)
+            else:
+                st.caption("No price lines yet.")
 
-                            response_parts.append(
-                                f'<div class="chat-observation">'
-                                f'<div class="meta">{comp} | {layer} | {kind} | {url}</div>'
-                                f"{text}</div>"
-                            )
-                        response = "\n".join(response_parts)
-                    else:
-                        response = "No observations found matching your query. Try different keywords or select a different competitor."
+        with tab_diff:
+            earlier = [r["id"] for r in all_runs if r["id"] != run_id]
+            base = st.selectbox("Compare with an earlier run", options=["(pick a run)"] + earlier, key=f"diffbase_{run_id}")
+            if base != "(pick a run)":
+                code, d = api_get(f"/runs/{run_id}/diff", **{"from": base})
+                if code == 200:
+                    st.markdown(f'**+{len(d["added"])}** added &nbsp; **-{len(d["removed"])}** removed &nbsp; {d["unchanged"]} unchanged &nbsp; new price lines: **{len(d["priceChanges"])}**')
+                    for l in d["priceChanges"][:20]:
+                        st.markdown(f'<div class="hidden-line">$ [{l["vantage"]}] {l["text"][:140]}</div>', unsafe_allow_html=True)
+                    for l in [x for x in d["added"] if x not in d["priceChanges"]][:20]:
+                        st.markdown(f'<div class="surface-line">+ [{l["vantage"]}] {l["text"][:140]}</div>', unsafe_allow_html=True)
+                    for l in d["removed"][:20]:
+                        st.markdown(f'<div class="surface-line">- [{l["vantage"]}] {l["text"][:140]}</div>', unsafe_allow_html=True)
+                else:
+                    st.error(d.get("reason", code))
 
-                    st.markdown(response, unsafe_allow_html=True)
-                    st.session_state.chat_messages.append({"role": "assistant", "content": response})
+        with tab_matrix:
+            _, mx = api_get(f"/runs/{run_id}/matrix")
+            if mx.get("rows"):
+                for row in mx["rows"]:
+                    st.markdown(f'**{row["feature"]}** &nbsp; {row["status"]} &nbsp; <span class="muted">{row.get("value") or ""}</span>', unsafe_allow_html=True)
+                    with st.expander(f"evidence ({len(row['evidence'])})"):
+                        _, fd = api_get(f"/findings/{row['id']}")
+                        for o in fd.get("observations", []):
+                            st.markdown(f'<div class="surface-line">{o["text"][:160]}<br><span class="muted">{o["url"]} · {o["layer"]}</span></div>', unsafe_allow_html=True)
+                        for a in fd.get("artifacts", []):
+                            st.caption(f'artifact {a["path"]} {"available" if a["exists"] else "missing"}')
+            else:
+                st.caption(mx.get("note") or "No findings yet.")
 
-        conn.close()
+        with tab_events:
+            _, ev = api_get(f"/runs/{run_id}/events", format="json")
+            for e in list(reversed(ev.get("events", [])))[:60]:
+                data = e["event"]["data"]
+                if e["type"] == "observation":
+                    summary = f'{data.get("layer")} {data.get("kind")}: {str(data.get("text", ""))[:80]}'
+                elif e["type"] == "job_state":
+                    summary = f'{data.get("state")} job {str(data.get("jobId", ""))[:8]} {data.get("reason") or ""}'
+                elif e["type"] == "handoff":
+                    summary = f'{data.get("state")} {data.get("wall")} job {str(data.get("jobId", ""))[:8]}'
+                elif e["type"] == "counter":
+                    summary = f'{data.get("url")} missed by fetch: {data.get("missed")}'
+                else:
+                    summary = json.dumps(data)[:100]
+                st.markdown(f'<div class="mono"><span class="muted">{e["createdAt"][11:19]}</span> <span style="color:#2563eb">{e["type"]}</span> {summary}</div>', unsafe_allow_html=True)
 
-    elif not conn:
-        st.caption("No database found yet. Run the backend to generate data.")
+        st.divider()
 
-    # --- Previous runs (when no active run) ---
-    if conn and not st.session_state.active_run_id:
-        runs = load_runs(conn)
-        if runs:
-            st.markdown("##### Previous Runs")
-            for run in runs[:10]:
-                status = run.get("status", "unknown")
-                spent = run.get("spent_micro_usd", 0) / 1_000_000
-                rid = run["id"]
-
-                status_color = {
-                    "completed": "#16a34a",
-                    "partial": "#d97706",
-                    "failed": "#dc2626",
-                }.get(status, "#6b7280")
-
-                col_info, col_btn = st.columns([4, 1])
-                with col_info:
-                    st.markdown(
-                        f'<span style="font-family:monospace;font-size:0.85rem;">'
-                        f'{rid}</span> &nbsp; '
-                        f'<span style="color:{status_color};font-weight:600">{status}</span>'
-                        f' &nbsp; ${spent:.2f}',
-                        unsafe_allow_html=True,
-                    )
-                with col_btn:
-                    if st.button("View", key=f"view_{rid}"):
-                        st.session_state.active_run_id = rid
-                        st.rerun()
-        conn.close()
-
-    # Back button when viewing a run
-    if st.session_state.active_run_id:
-        st.markdown("---")
-        if st.button("Back to all runs"):
-            st.session_state.active_run_id = None
-            st.session_state.chat_messages = []
+    # ---------------- chat over observations ----------------
+    if st.session_state.active_runs:
+        st.markdown("##### Ask the research")
+        for msg in st.session_state.chat_messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"], unsafe_allow_html=True)
+        if query := st.chat_input("Search what Periscope found (words are matched against text, url and the revealing action)"):
+            st.session_state.chat_messages.append({"role": "user", "content": query})
+            parts = []
+            for run_id in st.session_state.active_runs:
+                _, res = api_get(f"/runs/{run_id}/observations", q=query, limit=15)
+                for o in res.get("observations", []):
+                    via = (o.get("revealedBy") or {}).get("label") or ""
+                    cls = "hidden-line" if o.get("missedByFetch") else "surface-line"
+                    parts.append(f'<div class="{cls}">{o["text"][:220]}<br><span class="muted">{o["competitor"]} · {o["layer"]} · {o["url"]}{" · via " + via if via else ""}</span></div>')
+            answer = f"**{len(parts)}** matching observations\n" + "\n".join(parts) if parts else "Nothing matched. Try fewer words."
+            st.session_state.chat_messages.append({"role": "assistant", "content": answer})
             st.rerun()
+
+        c_back, c_live = st.columns([1, 1])
+        with c_back:
+            if st.button("Back to all runs"):
+                st.session_state.active_runs = []
+                st.session_state.chat_messages = []
+                st.rerun()
+        with c_live:
+            st.session_state.live = st.toggle("Auto refresh while running", value=st.session_state.live)
+
+    if st.session_state.active_runs and any_live and st.session_state.live:
+        time.sleep(2)
+        st.rerun()

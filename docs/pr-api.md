@@ -9,11 +9,15 @@ Section 8.3, the API, so the frontend and the demo have an HTTP surface. Reviewe
 - `src/intel/prices.ts`: pricing rows with decimal amount, currency, period, each carrying its observation id.
 - `docs/api.md` contract, `fixtures/api/*.json` example responses for all 17 routes (`npm run api:fixtures`).
 
+- `src/intel/extract.ts`: feature matrix and diff summary with Claude (Opus 5 by default, `PERISCOPE_MODEL` to change), rows validated in code; `POST /runs/:id/extract`, `GET /runs/:id/matrix` grid, `GET /runs/:id/diff?summary=1`; auto-extract after each completed run when `ANTHROPIC_API_KEY` is set.
+- `src/steel/stagehand-extension.ts`: Stagehand's runtime extension uploaded to Steel once and installed into model-driven sessions; opt in with `PERISCOPE_STAGEHAND=1` (attaches, not yet stable with Tom's reveal).
+
 ## Proof
 
 - 16 API tests: A14 shapes on fixtures, A15 SSE reconnect with `Last-Event-ID`, A16 spend in dollars, A17 evidence drawer, idempotent `POST /runs`, cancel, handoff takeover and resume forwarding.
 - Live: `POST /runs` launched `api-live-ornn-1` on Steel, replay with the same idempotency key returned the same run id, 12 events streamed to `event: end` in 17 s, `/coverage` counter 6.
 - The CLI after the refactor produced the same result (`cli-after-refactor-1`, 14 s).
+- Extraction live: Spotify premium run gives 16 feature rows with evidence ids (regional pricing CA $13.99 / US $12.99 / DE 12,99 €, Hulu bundle, family plan limits); Ornn regulatory gives 5 (SLA, terms, AUP, privacy, compliance).
 
 ```
 Test Files  15 passed | 1 skipped (16)

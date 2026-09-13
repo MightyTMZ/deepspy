@@ -1,0 +1,58 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/runs"
+  },
+  "status": 200,
+  "response": {
+    "ok": true,
+    "runs": [
+      {
+        "id": "run-saturday",
+        "status": "completed",
+        "goal": null,
+        "category": "demo",
+        "capMicroUsd": 12000000,
+        "spentMicroUsd": 420000,
+        "createdAt": "2026-09-13T11:10:42.437Z",
+        "updatedAt": "2026-09-13T11:10:42.440Z",
+        "completedAt": "2026-09-13T11:10:42.440Z",
+        "reason": null,
+        "spentUsd": 0.42,
+        "capUsd": 12,
+        "live": false,
+        "observations": 18,
+        "competitors": [
+          "ornn"
+        ],
+        "purposes": [
+          "reveal",
+          "borders"
+        ]
+      },
+      {
+        "id": "run-friday",
+        "status": "completed",
+        "goal": null,
+        "category": "demo",
+        "capMicroUsd": 12000000,
+        "spentMicroUsd": 420000,
+        "createdAt": "2026-09-13T11:10:42.430Z",
+        "updatedAt": "2026-09-13T11:10:42.436Z",
+        "completedAt": "2026-09-13T11:10:42.436Z",
+        "reason": null,
+        "spentUsd": 0.42,
+        "capUsd": 12,
+        "live": false,
+        "observations": 18,
+        "competitors": [
+          "ornn"
+        ],
+        "purposes": [
+          "reveal",
+          "borders"
+        ]
+      }
+    ]
+  }
+}

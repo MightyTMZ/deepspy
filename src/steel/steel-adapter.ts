@@ -22,6 +22,8 @@ export interface SteelAdapterOptions {
   /** Credentials namespace to inject for a lease's accountRef; return undefined for no injection. */
   credentialNamespaceFor?: (accountRef: string) => string | undefined;
   onCheckpoint?: (sessionId: string, state: unknown) => Promise<void>;
+  /** Steel extension ids to install for a lease (Stagehand's runtime when a model will drive the session). */
+  extensionIdsFor?: (req: LeaseRequest) => Promise<string[]>;
 }
 
 export type ProfileStatus = "UPLOADING" | "READY" | "FAILED" | "UNKNOWN";
@@ -58,6 +60,9 @@ export class SteelAdapter {
       createOpts.namespace = ns;
       createOpts.credentials = { autoSubmit: false, blurFields: true, exactOrigin: true };
     }
+
+    const extensionIds = this.opts.extensionIdsFor ? await this.opts.extensionIdsFor(req) : [];
+    if (extensionIds.length) createOpts.extensionIds = extensionIds;
 
     const session = await this.steel.sessions.create(createOpts as never);
     const query = new URLSearchParams({ apiKey: this.opts.apiKey, sessionId: session.id });

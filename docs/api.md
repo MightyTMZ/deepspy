@@ -9,6 +9,8 @@ Section 8.3 of the architecture. Start it with `npm run api` (port 4747, `PERISC
 | `POST /account-setups/:id/finish` | after the human logged in: verify the indicator, settle, release, save the profile, wait for READY in the background | |
 | `GET /accounts/:id/status` | setup id, profile id, or `competitor/account` | |
 | `POST /runs` | launch a run; `Idempotency-Key` header replays the same run id for the same body, 409 for a different body | `{competitor, url, pages?, jobs?, countries?, capUsd?, start?, profileId?, accountRef?, runId?, category?, goal?}` |
+| `GET /runs?limit=50` | newest runs first with spend, observation count, competitors, whether still live | |
+| `GET /runs/:id/observations` | observations of a run, filtered; `q` matches every word against text, url and revealing label | `q?`, `competitor?`, `layer?`, `missedByFetch?`, `limit?` |
 | `GET /runs/:id` | run record with `spentUsd` and `capUsd` in dollars, jobs with states and reasons, counts, counters | |
 | `POST /runs/:id/cancel` | cancel queued jobs; running jobs finish their current page | |
 | `GET /runs/:id/events` | Server-sent events with ordered `id:` lines; reconnect with `Last-Event-ID`; ends with `event: end` once the run is terminal. `?format=json&after=N` returns the same as JSON | |

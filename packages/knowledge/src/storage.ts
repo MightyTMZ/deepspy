@@ -489,6 +489,15 @@ export class Storage {
     return row ? mapRun(row) : null;
   }
 
+  /** Newest runs first. Added for the API's run list (Fahad); read-only. */
+  listRuns(limit = 50): RunRecord[] {
+    this.#assertOpen();
+    const rows = this.#db
+      .prepare("SELECT * FROM runs ORDER BY created_at DESC, id DESC LIMIT ?")
+      .all(limit) as RunRow[];
+    return rows.map(mapRun);
+  }
+
   /** Authoritative spend for a run: the integer sum of receipt micro-dollars. */
   runSpendMicroUsd(runId: string): number {
     this.#assertOpen();

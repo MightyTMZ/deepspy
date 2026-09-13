@@ -58,6 +58,16 @@ describe("A14 every endpoint answers with the documented shape without Steel or 
     expect(r.body.counters).toEqual([{ competitor: "acme", url: "https://acme.test/pricing", missed: 1 }]);
   });
   it("404 for an unknown run", async () => { expect((await get("/runs/nope")).status).toBe(404); });
+  it("GET /runs lists newest first with counts; observations search filters by words and layer", async () => {
+    const r = await get("/runs"); expect(r.status).toBe(200);
+    const list = r.body.runs as Array<Record<string, unknown>>;
+    expect(list.map((x) => x.id)).toEqual(expect.arrayContaining(["r1", "r2"]));
+    expect(list.find((x) => x.id === "r1")).toMatchObject({ observations: 4, competitors: ["acme"], purposes: ["reveal"], spentUsd: 0.25 });
+    const o = await get("/runs/r1/observations?q=team%20month&layer=hidden"); expect(o.status).toBe(200);
+    expect(o.body.total).toBe(1);
+    expect((o.body.observations as Array<{ text: string }>)[0].text).toBe("Team $24 per month");
+    expect((await get("/runs/r1/observations?missedByFetch=1")).body.total).toBe(1);
+  });
   it("coverage", async () => {
     const r = await get("/runs/r1/coverage"); expect(r.status).toBe(200);
     expect(r.body.totals).toMatchObject({ surface: 1, hidden: 1, missedByFetch: 1 });

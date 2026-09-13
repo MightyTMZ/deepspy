@@ -1,6 +1,7 @@
 import { Stagehand, localBrowser } from "@browserbasehq/stagehand";
 import type { Page } from "playwright-core";
 import type { SessionHandle } from "@periscope/contracts";
+import { stagehandExtensionId } from "../steel/stagehand-extension.js";
 
 export interface StagehandSession {
   stagehand: Stagehand;
@@ -14,8 +15,13 @@ export interface StagehandSession {
 export async function createStagehand(
   handle: SessionHandle,
 ): Promise<StagehandSession> {
+  // Steel cannot load Stagehand's extension from a local path; the segment installs it into the session by id
+  // (src/steel/stagehand-extension.ts) and Stagehand attaches to that id.
+  const extensionId = stagehandExtensionId();
+  if (!extensionId) throw new Error("Stagehand extension not installed on Steel; the segment uploads it when ANTHROPIC_API_KEY is set");
   const browser = await localBrowser.connect({
     cdpUrl: handle.cdpUrl,
+    extensionId,
   });
 
   const stagehand = await Stagehand.create({
@@ -27,8 +33,13 @@ export async function createStagehand(
     },
   });
 
-  // Use the playwright-core page from the SessionHandle for direct DOM operations
-  const page = handle.page;
+  // Use the playwright-core page from the SessionHandle for direct DOM operations. Stagehand's init can close or
+  // replace a blank initial page, so re-resolve a live page from the same context after create.
+  let page: Page = handle.page;
+  if (page.isClosed()) {
+    const context = handle.page.context();
+    page = context.pages().find((p) => !p.isClosed()) ?? (await context.newPage());
+  }
 
   return {
     stagehand,
