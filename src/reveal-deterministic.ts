@@ -15,8 +15,20 @@ import { normalizeText, splitBlocks } from "./utils/text.js";
 /** Visible text as normalized lines. innerText preserves the line structure the diff needs. */
 export async function visibleLines(page: Page): Promise<string[]> {
   const raw = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
-  return raw.split(/\r?\n/).map(normalizeText).filter((l) => l.length >= 3);
+  return raw.split(/\r?\n/).map(normalizeText).filter((l) => l.length >= 3 && readsAsText(l));
 }
+
+/** ASCII-art backgrounds and decorative glyph rows are not content: keep lines that are mostly letters and digits. */
+export function readsAsText(line: string): boolean {
+  const alnum = (line.match(/[\p{L}\p{N}]/gu) ?? []).length;
+  return alnum / line.length >= 0.4;
+}
+
+/** Site navigation labels: opening these reveals a menu, not product content. */
+const NAV_LABEL = /^(platform|products?|solutions?|resources|company|developers?|docs|documentation|pricing|use cases|learn|more|about|community|customers|blog|support|features|integrations)$/i;
+
+/** Third-party widgets embedded on the page; their text is about the widget, not the competitor. */
+const THIRD_PARTY_IFRAME = /bugherd|intercom|hubspot|drift\.com|crisp\.chat|zendesk|hotjar|cookiebot|onetrust|googletagmanager|doubleclick|stripe\.com|recaptcha|hcaptcha|youtube|vimeo|calendly|typeform/i;
 
 export const CODE_LIKE = /\bvar\s|\bfunction\s*\(|=>|;\s*$|^\/\/|\{\s*$|\}\s*$|window\.|document\./;
 
@@ -162,7 +174,7 @@ async function tabsAndAccordions(ctx: Ctx): Promise<void> {
     // Site navigation menus (Platform, Solutions, Resources ...) open on click too, but a menu is not hidden
     // content about the product; counting it would inflate the missed-by-fetch number.
     const inNav = await el.evaluate((e) => Boolean(e.closest("nav, header, [role=navigation], [role=menubar]"))).catch(() => false);
-    if (inNav) continue;
+    if (inNav || NAV_LABEL.test(label)) continue;
     if (await guardedClick(ctx, el, label)) await capture(ctx, "tabs", { action: "click", label });
   }
   if (count === 0) {
@@ -300,7 +312,7 @@ async function iframes(ctx: Ctx): Promise<void> {
   for (const frame of page.frames()) {
     if (frame === page.mainFrame()) continue;
     const src = frame.url();
-    if (!src || src === "about:blank") continue;
+    if (!src || src === "about:blank" || THIRD_PARTY_IFRAME.test(src)) continue;
     let text = "";
     try { text = await frame.locator("body").innerText({ timeout: 2000 }); } catch { /* cross-origin */ }
     if (text && normalizeText(text).length > 20) {
