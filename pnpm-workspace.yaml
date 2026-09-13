@@ -1,0 +1,5 @@
+packages:
+  - 'packages/*'
+
+# frontend/deepspy is a teammate-owned, self-contained pnpm workspace and is
+# deliberately NOT included here.

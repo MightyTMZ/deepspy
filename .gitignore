@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local data: SQLite system of record, Qdrant storage, artifacts, traces
+data/
+
+# Local model cache for MiniLM
+.models/
+
+.DS_Store
+*.log
+.env
+.env.local
+
+# qdrant working-directory marker
+.qdrant-initialized
