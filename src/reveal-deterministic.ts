@@ -21,7 +21,9 @@ export async function visibleLines(page: Page): Promise<string[]> {
 /** ASCII-art backgrounds and decorative glyph rows are not content: keep lines that are mostly letters and digits. */
 export function readsAsText(line: string): boolean {
   const alnum = (line.match(/[\p{L}\p{N}]/gu) ?? []).length;
-  return alnum / line.length >= 0.4;
+  if (alnum / line.length < 0.4) return false;
+  // glyph rows made of x, s and # pass the ratio test; real words carry a vowel or a digit
+  return /\d|[\p{L}]*[aeiouyäöüéèàáíóú][\p{L}]{2,}|[\p{L}]{2,}[aeiouyäöüéèàáíóú][\p{L}]*/iu.test(line);
 }
 
 /** Site navigation labels: opening these reveals a menu, not product content. */
