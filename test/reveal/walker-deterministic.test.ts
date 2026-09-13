@@ -22,13 +22,13 @@ describe("walkDeterministic", () => {
     const texts = obs.map((o) => o.text);
     expect(texts).toContain("Welcome back, trial user. 3 projects active.");
     expect(texts).toContain("Plan: Team, 25 seats. SSO: enabled. Data region: EU.");
-    expect(texts.some((t) => /Card number ending/.test(t))).toBe(false);      // billing never visited
+    expect(texts.some((t) => /Card number ending/.test(t))).toBe(true);       // billing is read, never operated
     expect(texts.some((t) => /logged out/i.test(t))).toBe(false);             // log out never visited
-    expect(obs.filter((o) => o.kind === "link").map((o) => o.text).join(" ")).toMatch(/billing\.html.*logout\.html|logout\.html.*billing\.html/);
+    expect(obs.filter((o) => o.kind === "link").map((o) => o.text).join(" ")).toMatch(/logout\.html/);
     expect(obs.every((o) => o.layer === "interior")).toBe(true);
     expect(res.stoppedReason).toBe("wall");
     expect(res.wallDetected?.wall).toBe("login");
     expect(res.wallDetected?.screenshotPath).toMatch(/\.png$/);
-    expect(res.screens.size).toBe(2);
+    expect(res.screens.size).toBe(3);
   }, 60_000);
 });
