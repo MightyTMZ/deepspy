@@ -115,3 +115,11 @@ curl -s -N http://localhost:4747/runs/demo-api-1/events
 ```
 
 Then `GET /runs/demo-api-1/coverage`, `/borders`, `/prices`, `/diff?from=<earlier run>`; a wall appears at `GET /handoffs` and clears with `POST /jobs/<id>/resume`. Full contract: `docs/api.md`.
+
+## Live view for the judges
+
+`streamlit run frontend/app.py` then open **http://localhost:8501/Live_view** (the page appears in the sidebar as "Live view"). Every Steel session the agents hold is embedded as a live player next to the event log. Launch from the page or from the API; browsers appear within seconds.
+
+- **CAPTCHA beat:** jobs `walker`, start url `https://2captcha.com/demo/cloudflare-turnstile`. The wall is classified, Steel's solver runs first (the API must run with `STEEL_CAPTCHA=1`), the log prints `Steel CAPTCHA solver: solved`, the walk continues. If Steel gives up, the red wall card appears with the live view and a resume button.
+- **Login beat without a saved account:** jobs `walker`, start url = the competitor's login page. The walker stops at the login wall, the card turns red, a teammate types the password inside the embedded live view, clicks "I cleared it, resume", and the walker crawls the signed-in space in the same session. Periscope never sees the password.
+- **Six countries at once:** jobs `borders`, countries `CA,US,DE`: six browsers tile on the page, each captioned with its country and device.

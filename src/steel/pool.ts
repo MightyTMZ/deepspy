@@ -24,7 +24,9 @@ export interface PoolOptions {
 }
 
 interface Waiter { req: LeaseRequest; resolve: (h: SessionHandle) => void; reject: (e: Error) => void; }
-interface Active { handle: SessionHandle; accountRef?: string; forceTimer: NodeJS.Timeout; deadlineTimer: NodeJS.Timeout; lastCheckpoint: unknown; }
+interface Active { handle: SessionHandle; accountRef?: string; purpose?: LeaseRequest["purpose"]; startedAt?: string; forceTimer: NodeJS.Timeout; deadlineTimer: NodeJS.Timeout; lastCheckpoint: unknown; }
+
+export interface LiveSession { sessionId: string; viewerUrl: string; purpose?: LeaseRequest["purpose"]; vantage: SessionHandle["vantage"]; accountRef?: string; profileId?: string; startedAt?: string; deadlineAt: string; currentUrl: string | null; }
 
 export class SessionPool {
   private active = new Map<string, Active>();
@@ -51,6 +53,15 @@ export class SessionPool {
   }
 
   activeCount(): number { return this.active.size; }
+
+  /** Sessions this pool holds right now, for the live view. Never includes the CDP url. */
+  activeSessions(): LiveSession[] {
+    return [...this.active.values()].map((a) => {
+      let currentUrl: string | null = null;
+      try { currentUrl = a.handle.page.isClosed() ? null : a.handle.page.url(); } catch { /* page gone */ }
+      return { sessionId: a.handle.sessionId, viewerUrl: a.handle.viewerUrl, purpose: a.purpose, vantage: a.handle.vantage, accountRef: a.accountRef, profileId: a.handle.profileId, startedAt: a.startedAt, deadlineAt: a.handle.deadlineAt, currentUrl };
+    });
+  }
   queuedCount(): number { return this.queue.length; }
 
   /**
@@ -85,7 +96,7 @@ export class SessionPool {
       if (req.accountRef) this.accountLocks.add(req.accountRef);
       const raw = await this.adapter.open(req);
       const entry: Active = {
-        handle: raw, accountRef: req.accountRef, lastCheckpoint: undefined,
+        handle: raw, accountRef: req.accountRef, purpose: req.purpose, startedAt: new Date().toISOString(), lastCheckpoint: undefined,
         forceTimer: setTimeout(() => void this.forceRelease(raw.sessionId), this.forcedReleaseMs),
         deadlineTimer: setTimeout(() => void this.hitDeadline(raw.sessionId), this.deadlineMs),
       };

@@ -42,7 +42,8 @@ beforeAll(async () => {
     const done = (async () => { storage.createJob({ id: `${spec.runId}-j1`, runId: spec.runId, purpose: "surface", competitor: spec.competitor, url: spec.url, state: "completed" }); storage.setRunStatus(spec.runId, "completed"); return { completedJobs: [], failedJobs: [] }; })();
     return { runId: spec.runId, coordinator: {} as never, done, cancel: async () => { storage.setRunStatus(spec.runId, "cancelled", "test"); } };
   };
-  api = await createApi({ storage, port: 0, segment: { resume: async (jobId, generation) => { resumed.push([jobId, generation]); return { ok: true }; } }, launch: fakeLaunch });
+  api = await createApi({ storage, port: 0, segment: { resume: async (jobId, generation) => { resumed.push([jobId, generation]); return { ok: true }; } }, launch: fakeLaunch,
+    liveSessions: (runId) => [{ sessionId: "s1", viewerUrl: "https://viewer.test/s1", playerUrl: "https://api.steel.dev/v1/sessions/s1/player", purpose: "reveal", vantage: { country: "CA", device: "desktop", authenticated: false }, deadlineAt: "2026-09-13T12:00:00Z", currentUrl: "https://acme.test/pricing", runId: "r1", competitor: "acme" }].filter((s) => !runId || s.runId === runId) });
   base = `http://localhost:${api.port}`;
 });
 afterAll(async () => { await api.close(); storage.close(); });
@@ -146,6 +147,15 @@ describe("A15 events stream with ordered ids and reconnect", () => {
     const got = [...text.matchAll(/^id: (\d+)$/gm)].map((m) => Number(m[1]));
     expect(got).toEqual(all.slice(3).map((e) => e.eventId));
     expect(text).toMatch(/event: end/);
+  });
+});
+
+describe("live sessions", () => {
+  it("lists live Steel sessions with player urls, per run and overall", async () => {
+    const all = await get("/sessions"); expect(all.status).toBe(200);
+    expect((all.body.sessions as Array<Record<string, unknown>>)[0]).toMatchObject({ sessionId: "s1", runId: "r1", competitor: "acme", playerUrl: "https://api.steel.dev/v1/sessions/s1/player", currentUrl: "https://acme.test/pricing" });
+    expect(((await get("/runs/r1/sessions")).body.sessions as unknown[]).length).toBe(1);
+    expect(((await get("/runs/r2/sessions")).body.sessions as unknown[]).length).toBe(0);
   });
 });
 

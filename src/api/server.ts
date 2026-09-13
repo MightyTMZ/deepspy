@@ -13,6 +13,7 @@ import { priceRows } from "../intel/prices.js";
 import { extractFeatures, summarizeDiff, type Complete } from "../intel/extract.js";
 import { loadProfiles, profileFor, saveProfile, waitUntilReady } from "../steel/profiles.js";
 import type { LaunchHandle, RunSpec } from "../integration/launch-run.js";
+import type { LiveSessionView } from "../integration/live-sessions.js";
 
 /** What the API needs from the Steel segment. Narrow so tests can fake it. */
 export interface ApiSegment {
@@ -28,6 +29,7 @@ export interface ApiOptions {
   port?: number;                 // default PERISCOPE_API_PORT or 4747; 0 picks a free port
   settleMs?: number;             // profile settle before release on finish; default 40 s
   complete?: Complete;           // model behind /extract and diff summaries; absent means 503 / no summary
+  liveSessions?: (runId?: string) => LiveSessionView[]; // live Steel sessions with their owners, for the live view
 }
 
 export interface Api {
@@ -191,6 +193,11 @@ export function createApi(opts: ApiOptions): Promise<Api> {
     let timer = setTimeout(tick, 0);
     c.req.on("close", () => clearTimeout(timer));
   });
+
+  /* ---------------- live sessions ---------------- */
+  const sessionsView = (runId?: string) => (opts.liveSessions?.(runId) ?? []).map((s) => ({ ...s, pendingWall: [...pending.values()].find((h) => h.viewerUrl === s.viewerUrl)?.wall ?? null }));
+  route("GET", "/sessions", (c) => json(c.res, 200, { ok: true, sessions: sessionsView(), steel: Boolean(opts.liveSessions) }));
+  route("GET", "/runs/:id/sessions", (c) => { if (runOr404(c)) json(c.res, 200, { ok: true, runId: c.params.id, sessions: sessionsView(c.params.id) }); });
 
   /* ---------------- human in the loop ---------------- */
   route("GET", "/handoffs", (c) => json(c.res, 200, { ok: true, handoffs: [...pending.values()] }));
