@@ -15,6 +15,7 @@ import { fetchBenchmark } from "./benchmark.js";
 import { reveal } from "./reveal.js";
 import { revealDeterministic } from "./reveal-deterministic.js";
 import { walk } from "./walker.js";
+import { walkDeterministic } from "./walker-deterministic.js";
 import { runBorders } from "./borders.js";
 import { createStagehand } from "./utils/stagehand-bridge.js";
 import Steel from "steel-sdk";
@@ -345,25 +346,39 @@ export class Coordinator {
     });
 
     try {
-      const { stagehand, page } = await createStagehand(handle);
+      // Without a model key the deterministic walker (segment C) crawls links; with one, Tom's Stagehand walker operates controls.
+      const useModel = Boolean(process.env.ANTHROPIC_API_KEY);
+      const sh = useModel ? await createStagehand(handle) : undefined;
+      const page = sh?.page ?? handle.page;
+      const stagehand = sh?.stagehand;
 
       try {
         // Segment C integration: a wall pauses the walk, a human (or Steel's CAPTCHA solver) clears it in the SAME
         // session, and the walk resumes. Bounded so a wall that keeps reappearing cannot loop forever.
         let startUrl = job.urls[0];
         for (let attempt = 0; attempt < 3; attempt++) {
-          const result = await walk({
-            runId: this.config.runId,
-            jobId: job.id,
-            competitor: job.competitor,
-            startUrl,
-            stagehand,
-            page,
-            handle,
-            meter: this.meter,
-            policy: this.policy,
-            sink: this.config.sink,
-          });
+          const result = stagehand
+            ? await walk({
+                runId: this.config.runId,
+                jobId: job.id,
+                competitor: job.competitor,
+                startUrl,
+                stagehand,
+                page,
+                handle,
+                meter: this.meter,
+                policy: this.policy,
+                sink: this.config.sink,
+              })
+            : await walkDeterministic({
+                runId: this.config.runId,
+                jobId: job.id,
+                competitor: job.competitor,
+                startUrl,
+                page,
+                handle,
+                sink: this.config.sink,
+              });
 
           if (result.stoppedReason === "budget") {
             job.state = "partial";
@@ -392,7 +407,7 @@ export class Coordinator {
           startUrl = page.url();
         }
       } finally {
-        await stagehand.close();
+        await sh?.close();
       }
     } finally {
       await handle.release();

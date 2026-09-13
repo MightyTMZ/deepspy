@@ -69,6 +69,7 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
   });
   const notifier = new Notifier({ webhookUrl: opts.webhookUrl ?? (process.env.PERISCOPE_WEBHOOK_URL || undefined) });
   const handoff = new HandoffController(opts.driver ?? noopDriver, opts.sink, {
+    humanTimeoutMs: process.env.PERISCOPE_HUMAN_TIMEOUT_MS ? Number(process.env.PERISCOPE_HUMAN_TIMEOUT_MS) : undefined,
     notify: (evt, wall) => notifier.notify(evt, wall),
     captchaStatus: (sessionId) => adapter.captchaStatus(sessionId) as Promise<never>,
     signedInIndicator: async (handle) => {

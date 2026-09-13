@@ -13,12 +13,12 @@ import { createObservation, markMissedByFetch } from "./utils/observation-factor
 import { normalizeText, splitBlocks } from "./utils/text.js";
 
 /** Visible text as normalized lines. innerText preserves the line structure the diff needs. */
-async function visibleLines(page: Page): Promise<string[]> {
+export async function visibleLines(page: Page): Promise<string[]> {
   const raw = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
   return raw.split(/\r?\n/).map(normalizeText).filter((l) => l.length >= 3);
 }
 
-const CODE_LIKE = /\bvar\s|\bfunction\s*\(|=>|;\s*$|^\/\/|\{\s*$|\}\s*$|window\.|document\./;
+export const CODE_LIKE = /\bvar\s|\bfunction\s*\(|=>|;\s*$|^\/\/|\{\s*$|\}\s*$|window\.|document\./;
 
 export interface DeterministicRevealConfig {
   runId: string;
