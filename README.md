@@ -9,7 +9,7 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-24-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white">
-  <img alt="Playwright" src="https://img.shields.io/badge/Playwright-core-2EAD33?style=for-the-badge&logo=playwright&logoColor=white">
+  <img alt="Playwright" src="https://img.shields.io/badge/Playwright-core-2EAD33?style=for-the-badge&logoColor=white">
   <img alt="Claude" src="https://img.shields.io/badge/Claude-Opus%205-D97757?style=for-the-badge&logo=anthropic&logoColor=white">
   <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-front%20end-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white">
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-system%20of%20record-003B57?style=for-the-badge&logo=sqlite&logoColor=white">
@@ -52,7 +52,7 @@ Built at the UTMIST × WAT.ai *Battle of the Schools* hackathon (September 12–
   <img src="https://cdn.simpleicons.org/typescript/3178C6" height="44" alt="TypeScript" title="TypeScript">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/nodedotjs/5FA04E" height="44" alt="Node.js" title="Node.js">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/python/3776AB" height="44" alt="Python" title="Python">&nbsp;&nbsp;&nbsp;
-  <img src="https://cdn.simpleicons.org/playwright/2EAD33" height="44" alt="Playwright" title="Playwright">&nbsp;&nbsp;&nbsp;
+  <img src="https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logoColor=white" height="44" alt="Playwright" title="Playwright">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/anthropic/D97757" height="44" alt="Claude by Anthropic" title="Claude by Anthropic">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/streamlit/FF4B4B" height="44" alt="Streamlit" title="Streamlit">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/sqlite/003B57" height="44" alt="SQLite" title="SQLite">&nbsp;&nbsp;&nbsp;
