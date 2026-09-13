@@ -63,7 +63,8 @@ export function createSteelSegment(opts: SteelSegmentOptions): SteelSegment {
       return adapter.isProfileReady(profileId);
     },
     onDeadline: async (sessionId, lastCheckpoint) => {
-      await opts.sink.write({ type: "job_state", data: { jobId: `session:${sessionId}`, state: "finalizing", reason: `deadline reached; checkpoint ${lastCheckpoint ? "saved" : "absent"}` } });
+      // The coordinator owns job state; here we only log. Jobs read handle.deadlineAt and checkpoint themselves.
+      console.warn(`[pool] session ${sessionId} reached its deadline; checkpoint ${lastCheckpoint ? "saved" : "absent"}; releasing`);
     },
   });
   const notifier = new Notifier({ webhookUrl: opts.webhookUrl ?? (process.env.PERISCOPE_WEBHOOK_URL || undefined) });

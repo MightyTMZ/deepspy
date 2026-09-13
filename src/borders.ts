@@ -8,7 +8,7 @@ import type {
 import { Meter } from "./meter.js";
 import { Policy } from "./policy.js";
 import { reveal } from "./reveal.js";
-import { revealDeterministic } from "./reveal-deterministic.js";
+import { revealDeterministic, LIGHT_STRATEGIES } from "./reveal-deterministic.js";
 import { createStagehand } from "./utils/stagehand-bridge.js";
 
 export interface BordersConfig {
@@ -59,6 +59,7 @@ export async function runBorders(
             page,
             handle,
             sink: config.sink,
+            strategies: LIGHT_STRATEGIES, // borders compares the same page across vantages; a full reveal per vantage is too slow
           });
           if (!sh) return det.observations;
 

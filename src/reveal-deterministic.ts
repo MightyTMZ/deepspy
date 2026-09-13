@@ -31,7 +31,12 @@ export interface DeterministicRevealConfig {
   sink: EventSink;
   maxActionsPerStrategy?: number;   // default 12
   blocklistPath?: string;           // default fixtures/blocklist.json
+  /** Subset of strategies to run, in this order. Default: all. Borders uses a light set. */
+  strategies?: StrategyName[];
 }
+
+export type StrategyName = "consent" | "tabs" | "selects" | "toggles" | "showMore" | "hover" | "modals" | "iframes" | "documents" | "hiddenApi";
+export const LIGHT_STRATEGIES: StrategyName[] = ["consent", "toggles", "selects", "documents", "hiddenApi"];
 
 export interface DeterministicRevealResult {
   observations: Observation[];
@@ -155,18 +160,36 @@ async function tabsAndAccordions(ctx: Ctx): Promise<void> {
     if (await guardedClick(ctx, el, label)) await capture(ctx, "tabs", { action: "click", label });
   }
   if (count === 0) {
-    // Framer-style tabs: sibling short text nodes rendered as clickable divs/paragraphs with cursor:pointer.
-    const clickable = page.locator("div, p, span, h5, h6").filter({ hasText: /^.{2,40}$/ });
-    const total = Math.min(await clickable.count(), 400);
-    const tried = new Set<string>();
-    for (let i = 0; i < total && tried.size < ctx.max; i++) {
-      const el = clickable.nth(i);
-      const pointer = await el.evaluate((e) => getComputedStyle(e).cursor === "pointer" && e.children.length <= 2).catch(() => false);
-      if (!pointer) continue;
-      const label = await labelOf(el);
-      if (!label || tried.has(label) || ctx.blocked.test(label)) continue;
-      tried.add(label);
-      if (await guardedClick(ctx, el, label)) await capture(ctx, "tabs", { action: "click", label });
+    // Framer-style tabs: short clickable text nodes with cursor:pointer and no link/button role.
+    // One evaluate marks the candidates so the remote CDP round trips stay at one per click, not one per element.
+    const candidatesFound: Array<{ idx: number; label: string }> = await page.evaluate((max) => {
+      const out: Array<{ idx: number; label: string }> = [];
+      const seen = new Set<string>();
+      const els = Array.from(document.querySelectorAll("div, p, span, h4, h5, h6, li"));
+      let idx = 0;
+      for (const e of els) {
+        if (out.length >= max) break;
+        const el = e as HTMLElement;
+        if (el.closest("a, button, [role=button], nav, header, footer")) continue;
+        const text = (el.innerText || "").trim();
+        if (text.length < 2 || text.length > 40 || /\n/.test(text)) continue;
+        if (el.children.length > 2) continue;
+        const cs = getComputedStyle(el);
+        if (cs.cursor !== "pointer" || cs.display === "none" || cs.visibility === "hidden") continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8) continue;
+        if (seen.has(text)) continue;
+        seen.add(text);
+        el.setAttribute("data-periscope-tab", String(idx));
+        out.push({ idx, label: text });
+        idx++;
+      }
+      return out;
+    }, ctx.max).catch(() => [] as Array<{ idx: number; label: string }>);
+    for (const cand of candidatesFound) {
+      if (ctx.blocked.test(cand.label)) continue;
+      const el = page.locator(`[data-periscope-tab="${cand.idx}"]`).first();
+      if (await guardedClick(ctx, el, cand.label)) await capture(ctx, "tabs", { action: "click", label: cand.label });
     }
   }
 }
@@ -351,10 +374,11 @@ export async function revealDeterministic(cfg: DeterministicRevealConfig): Promi
     strategies: {}, apiUrls,
   };
 
-  const strategies: Array<[string, (c: Ctx) => Promise<void>]> = [
-    ["consent", consentWalls], ["tabs", tabsAndAccordions], ["selects", selects], ["toggles", toggles],
-    ["showMore", showMore], ["hover", hover], ["modals", modals], ["iframes", iframes], ["documents", (c) => documents(c)], ["hiddenApi", hiddenApi],
-  ];
+  const all: Record<StrategyName, (c: Ctx) => Promise<void>> = {
+    consent: consentWalls, tabs: tabsAndAccordions, selects, toggles, showMore, hover, modals, iframes, documents: (c) => documents(c), hiddenApi,
+  };
+  const order: StrategyName[] = cfg.strategies ?? ["consent", "tabs", "selects", "toggles", "showMore", "hover", "modals", "iframes", "documents", "hiddenApi"];
+  const strategies: Array<[string, (c: Ctx) => Promise<void>]> = order.map((n) => [n, all[n]]);
   for (const [name, fn] of strategies) {
     try { await fn(ctx); } catch (err) { console.error(`deterministic reveal ${name} failed:`, (err as Error).message.slice(0, 120)); }
   }
