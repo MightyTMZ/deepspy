@@ -32,3 +32,12 @@ npm run test:steel          # fixture tests, no keys needed
 npm run test:live           # live tests against Steel, needs STEEL_API_KEY
 npm run setup-account -- --competitor <name> --url <login url>
 ```
+
+## Running the pipeline end to end
+
+```bash
+MSYS_NO_PATHCONV=1 STEEL_API_KEY=... ANTHROPIC_API_KEY=... npx tsx src/run.ts --competitor ornn --url https://ornn.com --pages /regulatory,/product --jobs surface,benchmark,reveal --countries CA,US,DE --cap 12
+```
+
+`MSYS_NO_PATHCONV=1` matters on Windows Git Bash: without it, `--pages /regulatory` reaches Node as `C:/Program Files/Git/regulatory`.
+A handoff prints a live-view URL; resolve it there, then `curl -X POST http://localhost:4747/jobs/<jobId>/resume`.
