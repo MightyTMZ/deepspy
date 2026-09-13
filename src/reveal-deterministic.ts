@@ -181,6 +181,17 @@ async function tabsAndAccordions(ctx: Ctx): Promise<void> {
     if (inNav || NAV_LABEL.test(label)) continue;
     if (await guardedClick(ctx, el, label)) await capture(ctx, "tabs", { action: "click", label });
   }
+  // Hand-rolled accordions: a button whose label ends in a plus or minus sign (FAQ lists, "Compare plans +").
+  const plus = page.locator("button, [role=button]").filter({ hasText: /[+\-−▾▸]\s*$/ });
+  const pn = Math.min(await plus.count(), ctx.max);
+  for (let i = 0; i < pn; i++) {
+    const el = plus.nth(i);
+    const label = await labelOf(el);
+    if (!label || NAV_LABEL.test(label)) continue;
+    const inNav = await el.evaluate((e) => Boolean(e.closest("nav, header, [role=navigation]"))).catch(() => false);
+    if (inNav) continue;
+    if (await guardedClick(ctx, el, label)) { count++; await capture(ctx, "tabs", { action: "click", label }); }
+  }
   if (count === 0) {
     // Framer-style tabs: short clickable text nodes with cursor:pointer and no link/button role.
     // One evaluate marks the candidates so the remote CDP round trips stay at one per click, not one per element.

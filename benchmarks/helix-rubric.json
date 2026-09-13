@@ -1,0 +1,87 @@
+{
+  "title": "Helix Ledger planted facts (65). Match: case-insensitive substring; `all` means every string must be present.",
+  "items": [
+    { "id": "nav1", "group": "Navigation items", "label": "Pricing link", "accept": ["Pricing"] },
+    { "id": "nav2", "group": "Navigation items", "label": "Sign Up link", "accept": ["Sign Up"] },
+
+    { "id": "hero1", "group": "Hero", "label": "Bookkeeping for Small Teams tagline", "accept": ["Bookkeeping for Small Teams"] },
+
+    { "id": "cta1", "group": "Immediate action items", "label": "Get Started", "accept": ["Get Started"] },
+    { "id": "cta2", "group": "Immediate action items", "label": "Watch demo", "accept": ["Watch demo"] },
+
+    { "id": "feat1", "group": "Features", "label": "Automated Reconciliation", "accept": ["Automated Reconciliation"] },
+    { "id": "feat2", "group": "Features", "label": "General Ledger", "accept": ["General Ledger"] },
+    { "id": "feat3", "group": "Features", "label": "Team Collaboration", "accept": ["Team Collaboration"] },
+    { "id": "feat4", "group": "Features", "label": "Custom Reporting", "accept": ["Custom Reporting"] },
+    { "id": "feat5", "group": "Features", "label": "Bank-Grade Security", "accept": ["Bank-Grade Security", "Bank Grade Security"] },
+    { "id": "feat6", "group": "Features", "label": "Invoicing", "accept": ["Invoicing"] },
+
+    { "id": "fdesc1", "group": "Feature descriptions", "label": "smart rules engine", "accept": ["smart rules engine"] },
+    { "id": "fdesc2", "group": "Feature descriptions", "label": "immutable record of all your financial transactions", "accept": ["immutable record of all your financial transactions"] },
+    { "id": "fdesc3", "group": "Feature descriptions", "label": "granular role-based access control", "accept": ["granular role-based access control"] },
+    { "id": "fdesc4", "group": "Feature descriptions", "label": "powerful financial reports with just a few clicks", "accept": ["financial reports with just a few clicks"] },
+    { "id": "fdesc5", "group": "Feature descriptions", "label": "encrypted at rest and in transit with SOC2 compliance", "accept": ["in transit with SOC2 compliance"] },
+    { "id": "fdesc6", "group": "Feature descriptions", "label": "professional invoices and track payments", "accept": ["professional invoices and track payments"] },
+
+    { "id": "faq1", "group": "FAQs", "label": "multi-currency question", "accept": ["handle multi-currency"] },
+    { "id": "faq2", "group": "FAQs", "label": "international bank question", "accept": ["connect my international bank"] },
+    { "id": "faq3", "group": "FAQs", "label": "audit trail question", "accept": ["Is there an audit trail"] },
+    { "id": "faq4", "group": "FAQs", "label": "accounting services question", "accept": ["offer accounting services"] },
+
+    { "id": "faqa1", "group": "FAQ answers", "label": "exchange rates updated daily", "accept": ["updates exchange rates daily"] },
+    { "id": "faqa2", "group": "FAQ answers", "label": "over 10,000 global financial institutions", "accept": ["10,000 global financial institutions"] },
+    { "id": "faqa3", "group": "FAQ answers", "label": "immutably logged for compliance", "accept": ["immutably logged"] },
+    { "id": "faqa4", "group": "FAQ answers", "label": "invite your CPA at no extra cost", "accept": ["invite your CPA"] },
+
+    { "id": "mo1", "group": "Monthly pricing tiers", "label": "Starter $9 per user per month", "accept": ["$9 per user per month"] },
+    { "id": "mo2", "group": "Monthly pricing tiers", "label": "Team $24 per user per month", "accept": ["$24 per user per month"] },
+    { "id": "mo3", "group": "Monthly pricing tiers", "label": "Business $59 per user per month", "accept": ["$59 per user per month"] },
+
+    { "id": "an1", "group": "Annual pricing tiers", "label": "Starter $7 per user per month billed annually", "accept": ["$7 per user per month"] },
+    { "id": "an2", "group": "Annual pricing tiers", "label": "Team $19 per user per month billed annually", "accept": ["$19 per user per month"] },
+    { "id": "an3", "group": "Annual pricing tiers", "label": "Business $47 per user per month billed annually", "accept": ["$47 per user per month"] },
+
+    { "id": "seat1", "group": "Team sizes", "label": "1 seat", "accept": ["1 seat"] },
+    { "id": "seat2", "group": "Team sizes", "label": "5 seats", "accept": ["5 seats"] },
+    { "id": "seat3", "group": "Team sizes", "label": "25 seats", "accept": ["25 seats"] },
+    { "id": "seat4", "group": "Team sizes", "label": "100+ seats (contact us)", "accept": ["100+ seats"] },
+
+    { "id": "cmp1", "group": "Compare plans table", "label": "table rows: bank connections, audit log retention, SSO, API access, seats, export formats", "accept": ["Audit log retention"] },
+
+    { "id": "wp1", "group": "Security whitepaper", "label": "Download Security Whitepaper (pdf link)", "accept": ["Download Security Whitepaper", "security-whitepaper.pdf"] },
+
+    { "id": "dash1", "group": "Dashboard", "label": "Subscription usage: Team plan 25 of 30 seats used", "accept": ["25 of 30 seats"] },
+    { "id": "dash2", "group": "Dashboard", "label": "Connections: bank connections 7 of 10", "accept": ["Bank connections: 7 of 10", "7 of 10"] },
+    { "id": "dash3", "group": "Dashboard", "label": "Team members page", "accept": ["Team Members"] },
+    { "id": "dash4", "group": "Dashboard", "label": "Activity log page", "accept": ["Activity Log", "Recent Activity"] },
+    { "id": "dash5", "group": "Dashboard", "label": "Settings: data region EU (Frankfurt)", "accept": ["EU (Frankfurt)"] },
+
+    { "id": "int1", "group": "Dashboard integrations", "label": "Stripe", "accept": ["Stripe"] },
+    { "id": "int2", "group": "Dashboard integrations", "label": "PayPal", "accept": ["PayPal"] },
+    { "id": "int3", "group": "Dashboard integrations", "label": "Square", "accept": ["Square"] },
+    { "id": "int4", "group": "Dashboard integrations", "label": "Shopify", "accept": ["Shopify"] },
+    { "id": "int5", "group": "Dashboard integrations", "label": "Slack", "accept": ["Slack"] },
+    { "id": "int6", "group": "Dashboard integrations", "label": "Mailchimp", "accept": ["Mailchimp"] },
+    { "id": "int7", "group": "Dashboard integrations", "label": "QuickBooks sync", "accept": ["QuickBooks sync"] },
+    { "id": "int8", "group": "Dashboard integrations", "label": "Xero", "accept": ["Xero"] },
+
+    { "id": "intd1", "group": "Dashboard integrations description", "label": "Stripe: Active", "accept": ["Stripe", "Active"], "all": true },
+    { "id": "intd2", "group": "Dashboard integrations description", "label": "PayPal: Active", "accept": ["PayPal", "Active"], "all": true },
+    { "id": "intd3", "group": "Dashboard integrations description", "label": "Square: Active", "accept": ["Square", "Active"], "all": true },
+    { "id": "intd4", "group": "Dashboard integrations description", "label": "Shopify: Active", "accept": ["Shopify", "Active"], "all": true },
+    { "id": "intd5", "group": "Dashboard integrations description", "label": "Slack: Active", "accept": ["Slack", "Active"], "all": true },
+    { "id": "intd6", "group": "Dashboard integrations description", "label": "Mailchimp: Active", "accept": ["Mailchimp", "Active"], "all": true },
+    { "id": "intd7", "group": "Dashboard integrations description", "label": "QuickBooks sync: Beta badge", "accept": ["QuickBooks sync", "Beta"], "all": true },
+    { "id": "intd8", "group": "Dashboard integrations description", "label": "Xero: Coming soon badge", "accept": ["Xero", "Coming soon"], "all": true },
+
+    { "id": "rep1", "group": "Generate report", "label": "Reports page", "accept": ["Reports"] },
+    { "id": "rep2", "group": "Generate report", "label": "Generate New Report section", "accept": ["Generate New Report"] },
+    { "id": "rep3", "group": "Generate report", "label": "Generate button", "accept": ["Generate"] },
+    { "id": "rep4", "group": "Generate report", "label": "Recent Reports section", "accept": ["Recent Reports"] },
+
+    { "id": "rec1", "group": "Recent reports", "label": "Q3 Financial Summary (q3.pdf)", "accept": ["Q3 Financial Summary", "q3.pdf"] },
+
+    { "id": "bill1", "group": "Billing", "label": "Current plan: Team plan", "accept": ["currently on the Team plan"] },
+    { "id": "bill2", "group": "Billing", "label": "Card ending 4242", "accept": ["Card ending 4242"] }
+  ]
+}
