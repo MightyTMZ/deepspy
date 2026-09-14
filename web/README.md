@@ -20,6 +20,10 @@ Environment (all optional, read at build time):
 
 The Helix button posts three runs to `POST /runs`: parse (surface, benchmark, reveal on pricing, regulatory and security), three countries (borders from CA, US and DE, six browsers) and log in (walker with `accountRef: "trial1"`, so Steel injects the vaulted credential). Store that credential once with `npm run setup-credential -- --competitor helix-ledger --origin https://testsaasstartup.vercel.app --username test@test.com --account trial1` from the repository root.
 
+## Deploy on Vercel
+
+The site is a static export (`output: "export"`), so it needs no server. The `vercel.json` at the repository root installs and builds this folder and serves `out/`; import the repository at vercel.com/new and press Deploy. Set `NEXT_PUBLIC_PERISCOPE_API_URL` in the project when the API is somewhere other than the viewer's own machine (for example a Cloudflare tunnel in front of port 4747). Alternatively set the project's Root Directory to `web` and let Vercel's Next.js preset build it.
+
 ## Production checks
 
 ```cmd

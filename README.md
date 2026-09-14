@@ -1,7 +1,7 @@
 # Periscope
 
 <p align="center">
-  <img src="docs/images/live-view.png" alt="Periscope live view: Steel browsers parsing a pricing page from three countries and signing in past the login" width="900">
+  <img src="docs/images/live-view.png" alt="Periscope web console: eight live Steel browsers parsing a pricing page from three countries and signing in past the login, with the Steel usage trace beside them" width="900">
 </p>
 
 <p align="center">
@@ -11,7 +11,8 @@
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white">
   <img alt="Playwright" src="https://img.shields.io/badge/Playwright-core-2EAD33?style=for-the-badge&logoColor=white">
   <img alt="Claude" src="https://img.shields.io/badge/Claude-Opus%205-D97757?style=for-the-badge&logo=anthropic&logoColor=white">
-  <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-front%20end-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16%20console-000000?style=for-the-badge&logo=nextdotjs&logoColor=white">
+  <img alt="Vercel" src="https://img.shields.io/badge/Vercel-ready-000000?style=for-the-badge&logo=vercel&logoColor=white">
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-system%20of%20record-003B57?style=for-the-badge&logo=sqlite&logoColor=white">
   <img alt="Qdrant" src="https://img.shields.io/badge/Qdrant-vectors-DC244C?style=for-the-badge&logo=qdrant&logoColor=white">
   <img alt="Vitest" src="https://img.shields.io/badge/Vitest-78%20tests-6E9F18?style=for-the-badge&logo=vitest&logoColor=white">
@@ -54,10 +55,12 @@ Built at the UTMIST × WAT.ai *Battle of the Schools* hackathon (September 12–
   <img src="https://cdn.simpleicons.org/python/3776AB" height="44" alt="Python" title="Python">&nbsp;&nbsp;&nbsp;
   <img src="https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logoColor=white" height="44" alt="Playwright" title="Playwright">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/anthropic/D97757" height="44" alt="Claude by Anthropic" title="Claude by Anthropic">&nbsp;&nbsp;&nbsp;
-  <img src="https://cdn.simpleicons.org/streamlit/FF4B4B" height="44" alt="Streamlit" title="Streamlit">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/react/61DAFB" height="44" alt="React" title="React">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/vercel/000000" height="44" alt="Vercel" title="Vercel">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/streamlit/FF4B4B" height="44" alt="Streamlit (earlier front end)" title="Streamlit (earlier front end)">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/sqlite/003B57" height="44" alt="SQLite" title="SQLite">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/qdrant/DC244C" height="44" alt="Qdrant" title="Qdrant">&nbsp;&nbsp;&nbsp;
-  <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="44" alt="Next.js (Helix Ledger test target)" title="Next.js (Helix Ledger test target)">&nbsp;&nbsp;&nbsp;
+  <img src="https://cdn.simpleicons.org/nextdotjs/000000" height="44" alt="Next.js (web console and Helix Ledger test target)" title="Next.js (web console and Helix Ledger test target)">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/cloudflare/F38020" height="44" alt="Cloudflare tunnel" title="Cloudflare tunnel">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/vitest/6E9F18" height="44" alt="Vitest" title="Vitest">&nbsp;&nbsp;&nbsp;
   <img src="https://cdn.simpleicons.org/pnpm/F69220" height="44" alt="pnpm" title="pnpm">
@@ -70,7 +73,7 @@ Built at the UTMIST × WAT.ai *Battle of the Schools* hackathon (September 12–
 | **Model** | Claude Opus 5 through the Anthropic SDK, forced tool schemas, every extracted row bound to observation ids |
 | **Storage** | SQLite (`better-sqlite3`, versioned migrations, micro-dollar accounting), Qdrant for vectors, MiniLM embeddings |
 | **API** | Dependency-free `node:http`: JSON routes, server-sent events, idempotency keys |
-| **Front end** | Streamlit, with Steel's live session player embedded per browser |
+| **Front end** | Next.js 16 static console (`web/`), Vercel-ready, with Steel's live session player embedded per browser; the earlier Streamlit app (`frontend/`) is kept as a run browser |
 | **Tests** | Vitest, local Chrome against HTML fixtures, in-memory SQLite, fake Steel segment and fake model |
 | **Test target** | Helix Ledger, a Next.js SaaS built for the benchmark, deployed on Vercel and reachable through a Cloudflare tunnel |
 
@@ -94,7 +97,11 @@ Periscope runs four kinds of job against a competitor:
 | **borders** | The same page opened in parallel from several countries (Steel proxies) and devices (Steel device emulation); a grid shows what each vantage saw that the others did not | `borders` |
 | **walker** | A crawl of the signed-in web space: same-origin links only, one observation per visible line per screen, a wall check after every navigation, autonomous sign-in with vaulted credentials, human handoff as the fallback | `interior` |
 
-On top of the observations, the intelligence layer produces coverage per page, the borders grid, a pricing table, a run-to-run diff, and a feature matrix extracted by Claude with every row bound to observation ids. A Streamlit front end shows the live browsers, a plain-language trace of what the agents and Steel are doing, and the intelligence beneath.
+On top of the observations, the intelligence layer produces coverage per page, the borders grid, a pricing table, a run-to-run diff, and a feature matrix extracted by Claude with every row bound to observation ids. The web console shows the live browsers, a plain-language trace of what the agents and Steel are doing, one story card per run, and the intelligence beneath.
+
+<p align="center">
+  <img src="docs/images/intelligence.png" alt="The Countries tab: the same pricing page as seen from Canada, the United States and Germany through Steel proxies" width="900">
+</p>
 
 ## How it uses Steel
 
@@ -116,8 +123,8 @@ On top of the observations, the intelligence layer produces coverage per page, t
 
 ```mermaid
 flowchart LR
-  subgraph Front["Front end (Streamlit)"]
-    LV[Live view: Steel players + trace]
+  subgraph Front["Front end (Next.js console, web/)"]
+    LV[Live view: Steel players + trace + story cards]
     INT[Intelligence tabs]
     BM[Benchmark]
   end
@@ -167,7 +174,7 @@ Eight layers, three owners, one shared contract (`packages/contracts`):
 | 5. Knowledge | SQLite system of record, Qdrant vectors, artifacts | Ayaan |
 | 6. Intelligence | Coverage, borders grid, prices, diff, feature matrix | Ayaan, helpers by Fahad |
 | 7. API | Section 8.3 routes, SSE, live sessions | Fahad |
-| 8. Front end | Streamlit main page, live section, benchmark | Team |
+| 8. Front end | Next.js console: live section, story cards, intelligence tabs, corpus, benchmark (Streamlit predecessor kept) | Team |
 
 The full specification, test ids and merge gates are in [docs/periscope-final-architecture.md](docs/periscope-final-architecture.md).
 
@@ -182,7 +189,7 @@ The full specification, test ids and merge gates are in [docs/periscope-final-ar
 
 ## Quick start
 
-Requirements: Node 24, pnpm 10, Python 3.11 with `streamlit` and `requests`, a Steel API key, optionally an Anthropic API key. Windows users run the CLIs from Git Bash with `MSYS_NO_PATHCONV=1`.
+Requirements: Node 24, pnpm 10, a Steel API key, optionally an Anthropic API key. Windows users run the CLIs from Git Bash with `MSYS_NO_PATHCONV=1`.
 
 ```bash
 npx pnpm@10 install
@@ -191,17 +198,28 @@ npx pnpm@10 typecheck
 npx pnpm@10 vitest run        # offline suite, no keys needed
 ```
 
-Start the API and the front end in two terminals:
+Start the API and the web console in two terminals:
 
 ```bash
 STEEL_CAPTCHA=1 STEEL_API_KEY=... ANTHROPIC_API_KEY=... npm run api
 ```
 
 ```bash
-python -m streamlit run frontend/app.py --server.port 8502
+cd web && npm ci && npm run dev
 ```
 
-Open http://localhost:8502. Without a Steel key every read route still works from the SQLite file; runs cannot be launched.
+Open http://localhost:3000. Without a Steel key every read route still works from the SQLite file; runs cannot be launched. The earlier Streamlit app still runs with `python -m streamlit run frontend/app.py` (Python 3.11, `streamlit`, `requests`).
+
+### Deploy the console on Vercel
+
+The console is a static Next.js export, so it deploys on Vercel with no server. Import the repository at [vercel.com/new](https://vercel.com/new) and press Deploy: the `vercel.json` at the root installs and builds `web/` and serves `web/out`. Two environment variables shape the build, both optional:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_PERISCOPE_API_URL` | `http://localhost:4747` | The Periscope API the page talks to |
+| `NEXT_PUBLIC_PERISCOPE_TARGET_URL` | `https://testsaasstartup.vercel.app` | The Helix Ledger target of the one-button demo |
+
+With the default, the deployed page talks to an API running on the viewer's own machine (browsers allow an https page to call `http://localhost`). To show the console to someone else, expose the API with `npx cloudflared tunnel --url http://localhost:4747`, set `NEXT_PUBLIC_PERISCOPE_API_URL` to the tunnel URL in the Vercel project and redeploy; the API answers with permissive CORS headers. Without a reachable API the page shows the static schematic and the committed benchmark.
 
 ### Environment variables
 
@@ -213,7 +231,7 @@ Open http://localhost:8502. Without a Steel key every read route still works fro
 | `PERISCOPE_STAGEHAND=1` | Attach Stagehand on top of the deterministic passes (opt-in) |
 | `PERISCOPE_API_PORT` | API port, default 4747 |
 | `PERISCOPE_DATA_DIR` | Where `periscope.sqlite`, profiles and journals live, default `./data` |
-| `PERISCOPE_TARGET_URL` | Public URL of the demo target, prefilled on the front end |
+| `PERISCOPE_TARGET_URL` | Public URL of the demo target, prefilled on the Streamlit app (`NEXT_PUBLIC_PERISCOPE_TARGET_URL` for the web console) |
 | `PERISCOPE_HUMAN_TIMEOUT_MS` | Human handoff timer, default 10 minutes |
 | `PERISCOPE_WEBHOOK_URL` | Mirror handoff notifications to a webhook |
 | `PERISCOPE_MODEL` | Extraction model, default `claude-opus-5` |
@@ -227,6 +245,12 @@ One button on the main page launches three runs at once:
 1. **Parse.** One Steel browser flips the switch, opens the accordion, selects every seat count, hovers the tooltip, presses Show more, reads the iframe and catches the page-load API call. Counter: 23 lines a fetch tool never returned, in about 12 seconds.
 2. **Three countries.** Six Steel browsers through CA, US and DE proxies, desktop and mobile. Canada sees CA$ prices and a GST line, Germany sees € prices behind a cookie banner the agent declines, the US sees $.
 3. **Log in.** One Steel browser opens the sign-in page. Steel injects the vaulted credentials, the walker verifies the anti-bot box in the browser, presses Sign in, and crawls the dashboard: 7 of 8 planted facts, no human involved. If any step fails the card says where and a person takes over in the embedded live view.
+
+Each run gets a story card in plain language, with every Steel feature it used named as a badge:
+
+<p align="center">
+  <img src="docs/images/stories.png" alt="Steel usage trace and the three story cards: parse, three countries, log in" width="420">
+</p>
 
 Step by step commands, including the credential vault setup, are in [docs/demo-runbook.md](docs/demo-runbook.md).
 
@@ -302,7 +326,7 @@ Offline tests run against local HTML fixtures in `fixtures/` with a local Chrome
 The 41-fact gap is exactly the content behind actions: modal descriptions, FAQ answers, annual tiers, the compare table, the whitepaper, and every dashboard fact behind the login. Full table: `benchmarks/results-2026-09-13-14-16.md`.
 
 <p align="center">
-  <img src="docs/images/benchmark.png" alt="Benchmark chart and group table on the front end" width="900">
+  <img src="docs/images/benchmark.png" alt="Benchmark section of the web console: 63 of 65 planted facts, chart by approach and the group table" width="900">
 </p>
 
 ## Safety and secrets
@@ -333,7 +357,8 @@ src/
 packages/
   contracts/      shared types and event union
   knowledge/      SQLite store, migrations, Qdrant, embeddings, artifacts
-frontend/         Streamlit app: main page, live section, benchmark section, Live view page
+web/              Next.js console: live section, API client, story derivations, corpus, benchmark (static export, Vercel-ready)
+frontend/         Earlier Streamlit app: run browser, live section, benchmark section
 fixtures/         HTML fixtures for offline tests and example API responses
 test/             vitest suites (api, integration, intel, reveal, steel)
 scripts/          inspectors, benchmark, extraction, fixtures
@@ -348,4 +373,4 @@ benchmarks/       rubric and results
 - **Ayaan** — knowledge, intelligence and API contracts (SQLite, Qdrant, extraction)
 - **Fahad Nafees Ahmed** — Steel browser layer, login, human in the loop, deterministic reveal and walker, API, live view
 
-Built with Steel, Playwright, Stagehand, Claude, SQLite, Qdrant and Streamlit.
+Built with Steel, Playwright, Stagehand, Claude, SQLite, Qdrant, Next.js and Streamlit.
