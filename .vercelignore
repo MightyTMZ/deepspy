@@ -1,0 +1,7 @@
+# Vercel builds only the web console (see vercel.json); nothing else in the repository is uploaded.
+/*
+!/web
+!/vercel.json
+/web/node_modules
+/web/.next
+/web/out

@@ -11,3 +11,5 @@ data/
 periscope-final-architecture.md
 .venv
 __pycache__
+.vercel
+.env*
