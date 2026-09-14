@@ -10,3 +10,4 @@ data/
 
 periscope-final-architecture.md
 .venv
+__pycache__
