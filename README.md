@@ -12,7 +12,7 @@
   <img alt="Playwright" src="https://img.shields.io/badge/Playwright-core-2EAD33?style=for-the-badge&logoColor=white">
   <img alt="Claude" src="https://img.shields.io/badge/Claude-Opus%205-D97757?style=for-the-badge&logo=anthropic&logoColor=white">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16%20console-000000?style=for-the-badge&logo=nextdotjs&logoColor=white">
-  <img alt="Vercel" src="https://img.shields.io/badge/Vercel-ready-000000?style=for-the-badge&logo=vercel&logoColor=white">
+  <a href="https://periscope-jade-theta.vercel.app/"><img alt="Live console on Vercel" src="https://img.shields.io/badge/Live%20console-periscope--jade--theta.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white"></a>
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-system%20of%20record-003B57?style=for-the-badge&logo=sqlite&logoColor=white">
   <img alt="Qdrant" src="https://img.shields.io/badge/Qdrant-vectors-DC244C?style=for-the-badge&logo=qdrant&logoColor=white">
   <img alt="Vitest" src="https://img.shields.io/badge/Vitest-78%20tests-6E9F18?style=for-the-badge&logo=vitest&logoColor=white">
@@ -20,6 +20,8 @@
 </p>
 
 **Super parsers for your competitors. Every page, every click, every country, then past the login.**
+
+Live console: **[periscope-jade-theta.vercel.app](https://periscope-jade-theta.vercel.app/)**. The page is static; point it at a running Periscope API (see [Deploy the console on Vercel](#deploy-the-console-on-vercel)) and the launch buttons come alive.
 
 Every research tool reads what a website serves. Periscope reads what a website hides: the pricing behind the annual toggle, the limits inside an accordion, the price a customer in Germany sees, the plan facts that only exist inside the product after sign-in. It runs on [Steel](https://steel.dev) cloud browsers and turns a competitor's whole web space into evidence-linked intelligence.
 
@@ -212,7 +214,7 @@ Open http://localhost:3000. Without a Steel key every read route still works fro
 
 ### Deploy the console on Vercel
 
-The console is a static Next.js export, so it deploys on Vercel with no server. Import the repository at [vercel.com/new](https://vercel.com/new) and press Deploy: the `vercel.json` at the root installs and builds `web/` and serves `web/out`. Two environment variables shape the build, both optional:
+The console is deployed at **[periscope-jade-theta.vercel.app](https://periscope-jade-theta.vercel.app/)** and redeploys from `main`. It is a static Next.js export, so it needs no server. To deploy your own copy, import the repository at [vercel.com/new](https://vercel.com/new) and press Deploy: the `vercel.json` at the root installs and builds `web/` and serves `web/out`. Two environment variables shape the build, both optional:
 
 | Variable | Default | Purpose |
 |---|---|---|
