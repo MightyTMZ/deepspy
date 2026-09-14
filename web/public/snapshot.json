@@ -1,0 +1,35 @@
+{
+  "source": "Project team's reported controlled SaaS benchmark and three recovered examples",
+  "recordedAt": null,
+  "total": 65,
+  "method": "A controlled SaaS target with 65 planted facts. Counts below are reported by the project team. ChatGPT with browsing used public pages only and stopped at login. Model versions, prompts, repeat runs, and a complete fact-level scoring sheet were not supplied. This is a controlled demonstration, not a general ranking of research tools.",
+  "benchmark": [
+    { "name": "Periscope", "count": 63, "note": "Browser interactions + authorized session" },
+    { "name": "ChatGPT with browsing", "count": 38, "note": "Public pages only · stopped at login" },
+    { "name": "Claude Opus + plain fetch", "count": 22, "note": "Plain fetch" },
+    { "name": "Claude Opus + reader connector", "count": 21, "note": "Reader connector" }
+  ],
+  "facts": [
+    {
+      "id": "annual", "title": "Annual pricing", "page": "Pricing", "layer": "Interaction",
+      "value": "CA$26", "unit": "per user / month", "quote": "CA$26 per user per month",
+      "context": "Annual billing", "country": "Not recorded", "currency": "CAD", "proxy": "Not recorded", "device": "Not recorded", "signedIn": "Not recorded", "wall": "Not recorded",
+      "action": "Select Annual", "control": "Monthly / Annual", "route": ["Public page", "Annual toggle", "Price observed", "Structured fact"],
+      "trace": ["Open pricing page", "Switch Monthly → Annual", "Observe CA$26 per user per month", "Attach annual billing context"], "timestamp": null
+    },
+    {
+      "id": "volume", "title": "Volume pricing", "page": "Pricing", "layer": "Interaction",
+      "value": "$39", "unit": "per user / month", "quote": "Volume pricing from $39 per user per month for 100 seats or more",
+      "context": "From · 100 seats or more", "country": "Not recorded", "currency": "Not specified", "proxy": "Not recorded", "device": "Not recorded", "signedIn": "Not recorded", "wall": "Not recorded",
+      "action": "Select 100+ seats", "control": "Seat selector", "route": ["Public page", "100+ seats", "Price observed", "Structured fact"],
+      "trace": ["Open pricing page", "Select 100+ seats", "Observe volume pricing from $39 per user per month", "Preserve minimum seat requirement"], "timestamp": null
+    },
+    {
+      "id": "seats", "title": "Team capacity", "page": "Dashboard", "layer": "Authenticated",
+      "value": "25 / 30", "unit": "seats used", "quote": "Team plan: 25 of 30 seats used",
+      "context": "Team plan · behind login", "country": "Not recorded", "currency": "Not applicable", "proxy": "Not recorded", "device": "Not recorded", "signedIn": "Yes", "wall": "Login required",
+      "action": "View signed-in dashboard", "control": "Authorized session", "route": ["Login wall", "Authorized access", "Dashboard", "Structured fact"],
+      "trace": ["Encounter login wall", "Access authorized session", "Observe Team plan: 25 of 30 seats used", "Attach authenticated page context"], "timestamp": null
+    }
+  ]
+}

@@ -1,0 +1,334 @@
+{
+  "date": "2026-09-13",
+  "total": 65,
+  "groups": [
+    {
+      "name": "Navigation items",
+      "total": 2,
+      "fetch": [
+        2,
+        2
+      ],
+      "reader": [
+        1,
+        0
+      ],
+      "periscope": [
+        2,
+        2
+      ],
+      "chatgpt": 2
+    },
+    {
+      "name": "Hero",
+      "total": 1,
+      "fetch": [
+        1,
+        1
+      ],
+      "reader": [
+        1,
+        1
+      ],
+      "periscope": [
+        1,
+        1
+      ],
+      "chatgpt": 1
+    },
+    {
+      "name": "Immediate action items",
+      "total": 2,
+      "fetch": [
+        2,
+        2
+      ],
+      "reader": [
+        2,
+        2
+      ],
+      "periscope": [
+        2,
+        2
+      ],
+      "chatgpt": 2
+    },
+    {
+      "name": "Features",
+      "total": 6,
+      "fetch": [
+        6,
+        6
+      ],
+      "reader": [
+        6,
+        6
+      ],
+      "periscope": [
+        6,
+        6
+      ],
+      "chatgpt": 6
+    },
+    {
+      "name": "Feature descriptions (modals)",
+      "total": 6,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        4,
+        4
+      ],
+      "chatgpt": 6
+    },
+    {
+      "name": "FAQs",
+      "total": 4,
+      "fetch": [
+        4,
+        4
+      ],
+      "reader": [
+        4,
+        4
+      ],
+      "periscope": [
+        4,
+        4
+      ],
+      "chatgpt": 4
+    },
+    {
+      "name": "FAQ answers",
+      "total": 4,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        4,
+        4
+      ],
+      "chatgpt": 4
+    },
+    {
+      "name": "Monthly pricing tiers",
+      "total": 3,
+      "fetch": [
+        3,
+        3
+      ],
+      "reader": [
+        3,
+        3
+      ],
+      "periscope": [
+        3,
+        3
+      ],
+      "chatgpt": 3
+    },
+    {
+      "name": "Annual pricing tiers",
+      "total": 3,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        3,
+        3
+      ],
+      "chatgpt": 3
+    },
+    {
+      "name": "Team sizes",
+      "total": 4,
+      "fetch": [
+        4,
+        4
+      ],
+      "reader": [
+        4,
+        4
+      ],
+      "periscope": [
+        4,
+        4
+      ],
+      "chatgpt": 4
+    },
+    {
+      "name": "Compare plans table",
+      "total": 1,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        1,
+        1
+      ],
+      "chatgpt": 1
+    },
+    {
+      "name": "Security whitepaper",
+      "total": 1,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        1,
+        1
+      ],
+      "chatgpt": 1
+    },
+    {
+      "name": "Dashboard",
+      "total": 5,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        5,
+        5
+      ],
+      "chatgpt": 0
+    },
+    {
+      "name": "Dashboard integrations",
+      "total": 8,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        8,
+        3
+      ],
+      "chatgpt": 1
+    },
+    {
+      "name": "Dashboard integrations description (expandable)",
+      "total": 8,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        8,
+        8
+      ],
+      "chatgpt": 0
+    },
+    {
+      "name": "Generate report types",
+      "total": 4,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        4,
+        4
+      ],
+      "chatgpt": 0
+    },
+    {
+      "name": "Recent reports",
+      "total": 1,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        1,
+        1
+      ],
+      "chatgpt": 0
+    },
+    {
+      "name": "Billing",
+      "total": 2,
+      "fetch": [
+        0,
+        0
+      ],
+      "reader": [
+        0,
+        0
+      ],
+      "periscope": [
+        2,
+        2
+      ],
+      "chatgpt": 0
+    }
+  ],
+  "approaches": [
+    {
+      "name": "Periscope",
+      "material": 63,
+      "reported": 58
+    },
+    {
+      "name": "ChatGPT Astra · browsing",
+      "material": 38,
+      "reported": null
+    },
+    {
+      "name": "Claude Opus 4.8 + fetch",
+      "material": 22,
+      "reported": 22
+    },
+    {
+      "name": "Claude Opus + Parallel",
+      "material": 21,
+      "reported": 20
+    }
+  ]
+}
