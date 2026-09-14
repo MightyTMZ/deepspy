@@ -18,13 +18,21 @@ MSYS_NO_PATHCONV=1 npx tsx src/run.ts --competitor browserbase --url https://www
 
 Or press Run in the frontend, which does the same through the API.
 
-## Frontend (API plus Streamlit)
+## Frontend (API plus the web console)
 
-Two terminals. The API launches runs, holds the Steel pool and answers every read; the Streamlit app only talks to the API.
+Two terminals. The API launches runs, holds the Steel pool and answers every read; the frontends only talk to the API.
 
 ```bash
 MSYS_NO_PATHCONV=1 STEEL_API_KEY=... npm run api
 ```
+
+The web console (`web/`, Next.js) is the one to show. It has the same live section as the Streamlit page: live Steel players, the Steel usage trace, wall cards with resume, the Helix button, story cards and the intelligence tabs. Env vars and the credential setup are in `web/README.md`.
+
+```bash
+cd web && npm ci && npm run dev
+```
+
+Open http://localhost:3000. The older Streamlit app still works and shows the run browser (competitor list, diff, events):
 
 ```bash
 pip install -r frontend/requirements.txt && streamlit run frontend/app.py
@@ -118,7 +126,7 @@ Then `GET /runs/demo-api-1/coverage`, `/borders`, `/prices`, `/diff?from=<earlie
 
 ## Live view for the judges
 
-`streamlit run frontend/app.py` then open **http://localhost:8501/Live_view** (the page appears in the sidebar as "Live view"). Every Steel session the agents hold is embedded as a live player next to the event log. Launch from the page or from the API; browsers appear within seconds.
+`cd web && npm run dev` then open **http://localhost:3000** (or `streamlit run frontend/app.py` for the Streamlit version of the same section). Every Steel session the agents hold is embedded as a live player next to the Steel usage trace. Launch from the page or from the API; browsers appear within seconds.
 
 - **CAPTCHA beat:** jobs `walker`, start url `https://2captcha.com/demo/cloudflare-turnstile`. The wall is classified, Steel's solver runs first (the API must run with `STEEL_CAPTCHA=1`), the log prints `Steel CAPTCHA solver: solved`, the walk continues. If Steel gives up, the red wall card appears with the live view and a resume button.
 - **Login beat without a saved account:** jobs `walker`, start url = the competitor's login page. The walker stops at the login wall, the card turns red, a teammate types the password inside the embedded live view, clicks "I cleared it, resume", and the walker crawls the signed-in space in the same session. Periscope never sees the password.
@@ -136,11 +144,13 @@ cd ../test_saas_startup && pnpm dev
 npx --yes cloudflared tunnel --url http://localhost:3000
 ```
 
-Copy the `https://<words>.trycloudflare.com` url the tunnel prints (it changes every time the tunnel restarts) and start the frontend with it:
+Copy the `https://<words>.trycloudflare.com` url the tunnel prints (it changes every time the tunnel restarts), store the credential for that origin (`npm run setup-credential -- --competitor helix-ledger --origin https://<words>.trycloudflare.com --username test@test.com --account trial1`) and start the frontend with it:
 
 ```bash
-PERISCOPE_TARGET_URL=https://<words>.trycloudflare.com python -m streamlit run frontend/app.py --server.port 8502
+cd web && NEXT_PUBLIC_PERISCOPE_TARGET_URL=https://<words>.trycloudflare.com npm run dev
 ```
+
+(Streamlit equivalent: `PERISCOPE_TARGET_URL=https://<words>.trycloudflare.com python -m streamlit run frontend/app.py --server.port 8502`.) Either way the target field on the page can also be edited before pressing the button.
 
 On the main page, under "Live: the agents at work on Steel", press **Run the Helix Ledger demo**. Three runs start at once and every browser appears in the live section:
 

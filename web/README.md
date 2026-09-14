@@ -1,16 +1,24 @@
 # Periscope · Depth Map
 
-A static Next.js App Router / TypeScript hackathon console with Sora and Roboto Mono from Google Fonts. It is intentionally concise: three sections centered on Steel browser operations, the evidence corpus, and the controlled benchmark. Palette and layout tokens live in `app/globals.css`. No backend, API key, account credentials, or live Steel sessions are used by this site.
+A static Next.js App Router / TypeScript console with Sora and Roboto Mono from Google Fonts. The centre of the page is the live section, wired to the Periscope API the same way the Streamlit page was: every Steel browser the agents hold is embedded as a live player, a Steel usage trace names every feature as it is used (proxies by country, device emulation, saved logins, walls), walls get a card with an "I cleared it, resume" button, one story card explains each run, and the intelligence tabs (coverage, countries, prices, feature matrix) fill from the same run. Below it sit the evidence corpus and the controlled benchmark. Palette and layout tokens live in `app/globals.css`; the API client is `lib/api.ts` and the plain-language derivations are `lib/story.ts`.
 
-## Run locally (Windows CMD)
+## Run locally
 
-```cmd
-cd "C:\Users\fahad\OneDrive\Documents\ChatGPT\UTMIST Battle of the Schools Hackathon\periscope-review\web"
-npm ci
-npm run dev
+```bash
+cd web && npm ci && npm run dev
 ```
 
-Open http://localhost:3000. Node.js 20.9 or newer is required. Start the backend from the repository root with `pnpm api` (port 4747); the console connects to that address by default. For another host, set `NEXT_PUBLIC_PERISCOPE_API_URL` before `npm run dev`. If the API is unavailable, the console uses the committed evidence snapshot and labels itself static.
+Open http://localhost:3000. Node.js 20.9 or newer is required. Start the API from the repository root with `STEEL_API_KEY=... npm run api` (port 4747); the console connects to that address by default. Without the API the page shows the static schematic instead of the live section's browsers.
+
+Environment (all optional, read at build time):
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `NEXT_PUBLIC_PERISCOPE_API_URL` | `http://localhost:4747` | Where the Periscope API answers |
+| `NEXT_PUBLIC_PERISCOPE_TARGET_URL` | `https://testsaasstartup.vercel.app` | Helix Ledger, the target of the one-button demo |
+| `NEXT_PUBLIC_PERISCOPE_TARGET_EMAIL` | `test@test.com` | The account shown next to the login beat (the password lives only in Steel's vault) |
+
+The Helix button posts three runs to `POST /runs`: parse (surface, benchmark, reveal on pricing, regulatory and security), three countries (borders from CA, US and DE, six browsers) and log in (walker with `accountRef: "trial1"`, so Steel injects the vaulted credential). Store that credential once with `npm run setup-credential -- --competitor helix-ledger --origin https://testsaasstartup.vercel.app --username test@test.com --account trial1` from the repository root.
 
 ## Production checks
 
