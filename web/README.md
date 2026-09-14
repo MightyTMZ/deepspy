@@ -22,7 +22,7 @@ The Helix button posts three runs to `POST /runs`: parse (surface, benchmark, re
 
 ## Deploy on Vercel
 
-The site is a static export (`output: "export"`), so it needs no server. The `vercel.json` at the repository root installs and builds this folder and serves `out/`; import the repository at vercel.com/new and press Deploy. Set `NEXT_PUBLIC_PERISCOPE_API_URL` in the project when the API is somewhere other than the viewer's own machine (for example a Cloudflare tunnel in front of port 4747). Alternatively set the project's Root Directory to `web` and let Vercel's Next.js preset build it.
+The site is a static export (`output: "export"`), so it needs no server. The `vercel.json` at the repository root installs and builds this folder and serves `out/`; import the repository at vercel.com/new and press Deploy. A hosted page cannot call `http://localhost`, so give it a public address for the API: run `npx cloudflared tunnel --url http://localhost:4747` and paste the printed https address into the **Periscope API** field on the page (remembered per browser; `?api=https://...` in the URL also works), or set `NEXT_PUBLIC_PERISCOPE_API_URL` in the Vercel project for a permanent one. Alternatively set the project's Root Directory to `web` and let Vercel's Next.js preset build it.
 
 ## Production checks
 

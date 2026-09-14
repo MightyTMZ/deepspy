@@ -4,6 +4,27 @@
 import { useEffect, useRef, useState } from "react";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_PERISCOPE_API_URL || "http://localhost:4747").replace(/\/$/, "");
+const API_KEY = "periscope.api";
+let apiBase = API_BASE;
+
+/** The address the page talks to right now. Changeable at runtime, so a hosted page can point at a tunnel in front of a local API. */
+export const getApiBase = () => apiBase;
+export function setApiBase(url: string): string {
+  const next = url.trim().replace(/\/$/, "");
+  apiBase = /^https?:\/\//i.test(next) ? next : API_BASE;
+  try { if (apiBase === API_BASE) localStorage.removeItem(API_KEY); else localStorage.setItem(API_KEY, apiBase); } catch { /* storage unavailable */ }
+  return apiBase;
+}
+/** Resolve the address once on mount: `?api=` in the url wins, then the one saved in this browser, then the build default. */
+export function initApiBase(): string {
+  try {
+    const fromQuery = new URLSearchParams(window.location.search).get("api");
+    if (fromQuery) return setApiBase(fromQuery);
+    const saved = localStorage.getItem(API_KEY);
+    if (saved) apiBase = saved;
+  } catch { /* no window or storage */ }
+  return apiBase;
+}
 export const TARGET_URL = (process.env.NEXT_PUBLIC_PERISCOPE_TARGET_URL || "https://testsaasstartup.vercel.app").replace(/\/$/, "");
 export const TARGET_EMAIL = process.env.NEXT_PUBLIC_PERISCOPE_TARGET_EMAIL || "test@test.com";
 
@@ -30,7 +51,7 @@ export type MatrixRow = { id: string; competitor: string; feature: string; statu
 
 export async function apiGet<T>(path: string): Promise<T | null> {
   try {
-    const r = await fetch(API_BASE + path, { cache: "no-store" });
+    const r = await fetch(apiBase + path, { cache: "no-store" });
     if (!r.ok) return null;
     return (await r.json()) as T;
   } catch {
@@ -40,7 +61,7 @@ export async function apiGet<T>(path: string): Promise<T | null> {
 
 export async function apiPost<T>(path: string, body: unknown, headers: Record<string, string> = {}): Promise<{ status: number; body: T | null }> {
   try {
-    const r = await fetch(API_BASE + path, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+    const r = await fetch(apiBase + path, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
     return { status: r.status, body: (await r.json().catch(() => null)) as T | null };
   } catch {
     return { status: 0, body: null };

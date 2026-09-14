@@ -219,7 +219,13 @@ The console is a static Next.js export, so it deploys on Vercel with no server. 
 | `NEXT_PUBLIC_PERISCOPE_API_URL` | `http://localhost:4747` | The Periscope API the page talks to |
 | `NEXT_PUBLIC_PERISCOPE_TARGET_URL` | `https://testsaasstartup.vercel.app` | The Helix Ledger target of the one-button demo |
 
-With the default, the deployed page talks to an API running on the viewer's own machine (browsers allow an https page to call `http://localhost`). To show the console to someone else, expose the API with `npx cloudflared tunnel --url http://localhost:4747`, set `NEXT_PUBLIC_PERISCOPE_API_URL` to the tunnel URL in the Vercel project and redeploy; the API answers with permissive CORS headers. Without a reachable API the page shows the static schematic and the committed benchmark.
+A page served over https cannot call an API on `localhost` (browsers block it), so the hosted console needs a public address for the API. The quickest way: run the API on your machine, put a tunnel in front of it, and paste the address into the **Periscope API** field at the top of the live section (the page remembers it; `?api=https://...` in the URL does the same):
+
+```bash
+npx cloudflared tunnel --url http://localhost:4747
+```
+
+For a permanent address, set `NEXT_PUBLIC_PERISCOPE_API_URL` in the Vercel project and redeploy. The API answers with permissive CORS headers. Without a reachable API the page shows the static schematic and the committed benchmark, and the launch buttons stay disabled.
 
 ### Environment variables
 

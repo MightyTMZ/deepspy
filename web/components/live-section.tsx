@@ -3,7 +3,7 @@
 // resume button; one story per run; and the intelligence beneath. Mirrors the Streamlit live section, against the same API.
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  apiGet, apiPost, countryName, launchCustomRun, launchHelixDemo, TARGET_EMAIL, TARGET_URL, usePoll,
+  apiGet, apiPost, countryName, initApiBase, launchCustomRun, launchHelixDemo, setApiBase, TARGET_EMAIL, TARGET_URL, usePoll,
   type BordersGrid, type CoveragePage, type Handoff, type LiveSession, type MatrixRow, type PriceRow, type RunSummary, type RunView, type StoredEvent,
 } from "@/lib/api";
 import { newTraceState, storyFor, storyOrder, updateTrace, type Story, type TraceState } from "@/lib/story";
@@ -11,13 +11,25 @@ import { newTraceState, storyFor, storyOrder, updateTrace, type Story, type Trac
 type Health = { ok: boolean; steel: boolean; model: boolean };
 
 export function LiveSection({ onConnection }: { onConnection?: (connected: boolean) => void }) {
-  const health = usePoll(() => apiGet<Health>("/health"), 5000);
+  // The API address: build default, or whatever was pasted into the page (kept in this browser), or `?api=` in the url.
+  const [api, setApi] = useState("");
+  const [apiDraft, setApiDraft] = useState("");
+  useEffect(() => { const b = initApiBase(); setApi(b); setApiDraft(b); }, []);
+  const [hosted, setHosted] = useState(false);
+  useEffect(() => { setHosted(window.location.protocol === "https:"); }, []);
+
+  const health = usePoll(() => apiGet<Health>("/health"), 5000, [api]);
   const connected = Boolean(health?.ok);
   useEffect(() => { onConnection?.(connected); }, [connected, onConnection]);
 
-  const sessions = usePoll(() => apiGet<{ sessions: LiveSession[] }>("/sessions").then((r) => r?.sessions ?? null), 2000);
-  const handoffs = usePoll(() => apiGet<{ handoffs: Handoff[] }>("/handoffs").then((r) => r?.handoffs ?? null), 2000);
-  const runs = usePoll(() => apiGet<{ runs: RunSummary[] }>("/runs?limit=30").then((r) => r?.runs ?? null), 4000);
+  const sessions = usePoll(() => apiGet<{ sessions: LiveSession[] }>("/sessions").then((r) => r?.sessions ?? null), 2000, [api]);
+  const handoffs = usePoll(() => apiGet<{ handoffs: Handoff[] }>("/handoffs").then((r) => r?.handoffs ?? null), 2000, [api]);
+  const runs = usePoll(() => apiGet<{ runs: RunSummary[] }>("/runs?limit=30").then((r) => r?.runs ?? null), 4000, [api]);
+  function connect(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const next = setApiBase(apiDraft);
+    setApi(next); setApiDraft(next);
+  }
 
   const [target, setTarget] = useState(TARGET_URL);
   const [custom, setCustom] = useState("");
@@ -79,6 +91,18 @@ export function LiveSection({ onConnection }: { onConnection?: (connected: boole
       </div>
 
       <div className="launcher">
+        <form className="launcher-row api-row" onSubmit={connect}>
+          <label className="mono" htmlFor="api-url">PERISCOPE API · EVERY NUMBER ON THIS PAGE COMES FROM THIS ADDRESS</label>
+          <div>
+            <input id="api-url" type="url" value={apiDraft} onChange={(e) => setApiDraft(e.target.value)} placeholder="http://localhost:4747" />
+            <button type="submit" className="secondary-action">Connect</button>
+          </div>
+          <p>{connected
+            ? `Connected to ${api} · Steel ${health?.steel ? "on" : "off"} · model ${health?.model ? "on" : "off"}`
+            : hosted && /^http:\/\/(localhost|127\.0\.0\.1)/.test(api)
+              ? "This page is served over https, so the browser will not let it call an API on localhost. Start the API on your machine (npm run api, port 4747), expose it with npx cloudflared tunnel --url http://localhost:4747, paste the https address it prints here and press Connect."
+              : `Not reachable at ${api || "the default address"}. Start the API with npm run api, or paste its public address here.`}</p>
+        </form>
         <div className="launcher-row">
           <label className="mono" htmlFor="helix-target">TARGET · HELIX LEDGER, THE TEAM&apos;S TEST SAAS</label>
           <div>
@@ -93,7 +117,7 @@ export function LiveSection({ onConnection }: { onConnection?: (connected: boole
             <input id="custom-target" type="url" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="https://competitor.example/pricing" />
             <button type="submit" className="secondary-action" disabled={busy || !health?.steel}>Open with Steel</button>
           </div>
-          <p>{note || (connected ? `API connected at ${health?.steel ? "Steel on" : "Steel off"} · ${health?.model ? "model on" : "model off"}` : "API not reachable. Start it with npm run api on port 4747.")}</p>
+          <p>{note || (connected ? "One run: surface, benchmark, reveal and borders from CA, US and DE." : "Connect the API above first.")}</p>
         </form>
       </div>
 
