@@ -1,7 +1,7 @@
 # Periscope
 
 <p align="center">
-  <img src="docs/images/live-view.png" alt="Periscope web console: eight live Steel browsers parsing a pricing page from three countries and signing in past the login, with the Steel usage trace beside them" width="900">
+  <img src="docs/images/hero.png" alt="Periscope: super parsers for your competitors. Every page, every click, every country, then past the login.">
 </p>
 
 <p align="center">
@@ -245,6 +245,10 @@ One button on the main page launches three runs at once:
 1. **Parse.** One Steel browser flips the switch, opens the accordion, selects every seat count, hovers the tooltip, presses Show more, reads the iframe and catches the page-load API call. Counter: 23 lines a fetch tool never returned, in about 12 seconds.
 2. **Three countries.** Six Steel browsers through CA, US and DE proxies, desktop and mobile. Canada sees CA$ prices and a GST line, Germany sees € prices behind a cookie banner the agent declines, the US sees $.
 3. **Log in.** One Steel browser opens the sign-in page. Steel injects the vaulted credentials, the walker verifies the anti-bot box in the browser, presses Sign in, and crawls the dashboard: 7 of 8 planted facts, no human involved. If any step fails the card says where and a person takes over in the embedded live view.
+
+<p align="center">
+  <img src="docs/images/live-view.png" alt="Periscope web console: live Steel browsers parsing a pricing page from three countries and signing in past the login, with the Steel usage trace beside them" width="900">
+</p>
 
 Each run gets a story card in plain language, with every Steel feature it used named as a badge:
 
